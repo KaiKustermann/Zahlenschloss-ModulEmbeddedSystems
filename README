@@ -31,3 +31,5 @@ e.g. for windows
 3. Adjust makefile (especially PROGRAMMER_PORT, Windows: COM3)
 
 4. On Windows: Download make and add to path
+
+5. For logging use PUTTY or something similar and open a terminal to you serial port
