@@ -1,0 +1,7 @@
+*.DS_Store
+*.obj
+*.elf
+*.o
+*.hex
+build
+.vscode/settings.json

@@ -1,0 +1,33 @@
+1. Download avr-gcc  and avrdude
+
+2. Adjust c_cpp_properties.json vs code settings
+
+e.g. for windows
+
+```json
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:\\Users\\Kaiku\\Downloads\\avr8-gnu-toolchain-3.7.0.1796-win32.any.x86_64\\avr8-gnu-toolchain-win32_x86_64\\avr",
+            ],
+            "defines": [
+                "__AVR_ATmega328P__",
+                "F_CPU=16000000UL"
+            ],
+            "macFrameworkPath": [],
+            "compilerPath": "C:\\Users\\Kaiku\\Downloads\\avr8-gnu-toolchain-3.7.0.1796-win32.any.x86_64\\avr8-gnu-toolchain-win32_x86_64\\bin\\avr-gcc -xc -E -v -",
+            "cStandard": "c11",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
+```
+
+3. Adjust makefile (especially PROGRAMMER_PORT, Windows: COM3)
+
+4. On Windows: Download make and add to path
