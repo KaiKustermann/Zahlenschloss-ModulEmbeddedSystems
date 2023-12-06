@@ -10,6 +10,8 @@
   #error baudrate error higher then one percent and therefore too high!
 #endif
 
+static uint8_t uartInitialized = 0;
+
 void usartInit() {
     unsigned int ubrr = UBRR_VAL;
     /* set baud rate 
@@ -21,6 +23,11 @@ void usartInit() {
     UCSR0B = (1<<TXEN0);
     /* set frame format: 8 bit data, 1 stop bit */
     UCSR0C = (0<<USBS0)|(3<<UCSZ00);
+    uartInitialized = 1;
+}
+
+uint8_t isUartInitialized(){
+    return uartInitialized;
 }
 
 /* send a char via usart */

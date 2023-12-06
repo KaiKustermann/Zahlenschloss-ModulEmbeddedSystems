@@ -3,41 +3,36 @@
 #include <string.h>
 
 #include "uart.h"
+#include "enums.h"
 
-// TODO
-// void loggerInit(){
-//     if(usartInitialized == 0){
-//         usartInit();
-//     }
-// }
+void loggerInit(){
+    if(isUartInitialized() == 0){
+        usartInit();
+    }
+}
 
-// TODO loglevel
-void logMessage(char* message){
-    const char* prefix;
-    // switch (level) {
-    //     case INFO:
-    //         prefix = "INFO";
-    //         break;
-    //     case WARNING:
-    //         prefix = "WARNING";
-    //         break;
-    //     case ERROR:
-    //         prefix = "ERROR";
-    //         break;
-    //     default:
-    //         prefix = "UNKNOWN";
-    //         break;
-    // }
-    
-    // char dest[60];
-    // strcpy(dest, prefix);
+void logMessage(char* message, LogLevel level){
+    char* prefix;
+    switch (level) {
+        case INFO:
+            prefix = "INFO: ";
+            break;
+        case WARNING:
+            prefix = "WARNING: ";
+            break;
+        case ERROR:
+            prefix = "ERROR: ";
+            break;
+        default:
+            prefix = "UNKNOWN: ";
+            break;
+    }
 
-    // // adjust the remaining space in dest for the message
-    // size_t remainingSpace = sizeof(dest) - strlen(dest) - 1;  // -1 for the null terminator
+    char completeMessage[strlen(prefix) + strlen(message) + 1]; 
 
-    // // concatenate the message, ensuring not to exceed the remaining space
-    // strncat(dest, message, remainingSpace);
+    strcpy(completeMessage, prefix);
 
-    // use uartPutString to output the result
-    uartPutString(message);
+    strcat(completeMessage, message);
+
+    uartPutString(completeMessage);
 }
