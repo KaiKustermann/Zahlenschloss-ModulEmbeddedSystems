@@ -31,3 +31,7 @@ e.g. for windows
 3. Adjust makefile (especially PROGRAMMER_PORT, Windows: COM3)
 
 4. On Windows: Download make and add to path
+
+5. For logging use PUTTY or something similar and open a terminal to you serial port.
+
+    5.1 Altenatively on linux, you can use the `screen` command to simply recieve serial data. The syntax is as follows: `screen [DEVICE NAME] [BAUDRATE]` , where the baudrate for the atmega328 is 9600.
