@@ -32,40 +32,58 @@ keypadInit(){
 }   
 
 char findPressedKey(){
-    uint8_t row=0, input;
-    for(row=0; row<4; row++)
-	{
-        // set all row high
+    const rows[4] = {ROW_0, ROW_1, ROW_2, ROW_3};
+    const cols[4] = {COL_0, COL_1, COL_2, COL_3};
+    int index_row = 0;
+    for (int row=0; row<4; row++){
+        // set all row high (1)
         PORT_KEYPAD  |= (1 << ROW_0) | (1 << ROW_1) | (1 << ROW_2) | (1 << ROW_3);
         // set current row to low (0)
-        switch(row)
-            {
-            case 0: PORT_KEYPAD &=~(1<<ROW_0);
-                    break;
-            case 1: PORT_KEYPAD &=~(1<<ROW_1);
-                    break;
-            case 2: PORT_KEYPAD &=~(1<<ROW_2);
-                    break;
-            case 3: PORT_KEYPAD &=~(1<<ROW_3);
-                    break;
+        PORT_KEYPAD &=~(1<<rows[index_row]);
+        int index_col = 0;
+        for(int col=0; col<4; col++){
+            // check if column is low (0), therefore pressed
+            if(PIN_KEYPAD & (1<<cols[col]) == 0){
+                return keypad[row][index_col];
             }
-        // check which column is 0, therefore pressed
-        if(PIN_KEYPAD & (1<<COL_0) == 0){
-            const col = 0;
-            return keypad[row][col];
-        };
-        if(PIN_KEYPAD & (1<<COL_1) == 0){
-            const col = 1;
-            return keypad[row][col];
-        };
-        if(PIN_KEYPAD & (1<<COL_2) == 0){
-            const col = 2;
-            return keypad[row][col];
-        };
-        if(PIN_KEYPAD & (1<<COL_3) == 0){
-            const col = 3;
-            return keypad[row][col];
-        };
-        return 0;
+            index_col++;
+        }
     }
+    
+    // uint8_t row=0;
+    // for(row=0; row<4; row++)
+	// {
+    //     // set all row high
+    //     PORT_KEYPAD  |= (1 << ROW_0) | (1 << ROW_1) | (1 << ROW_2) | (1 << ROW_3);
+    //     // set current row to low (0)
+    //     switch(row)
+    //         {
+    //         case 0: PORT_KEYPAD &=~(1<<ROW_0);
+    //                 break;
+    //         case 1: PORT_KEYPAD &=~(1<<ROW_1);
+    //                 break;
+    //         case 2: PORT_KEYPAD &=~(1<<ROW_2);
+    //                 break;
+    //         case 3: PORT_KEYPAD &=~(1<<ROW_3);
+    //                 break;
+    //         }
+    //     // check which column is 0, therefore pressed
+    //     if(PIN_KEYPAD & (1<<COL_0) == 0){
+    //         const col = 0;
+    //         return keypad[row][col];
+    //     };
+    //     if(PIN_KEYPAD & (1<<COL_1) == 0){
+    //         const col = 1;
+    //         return keypad[row][col];
+    //     };
+    //     if(PIN_KEYPAD & (1<<COL_2) == 0){
+    //         const col = 2;
+    //         return keypad[row][col];
+    //     };
+    //     if(PIN_KEYPAD & (1<<COL_3) == 0){
+    //         const col = 3;
+    //         return keypad[row][col];
+    //     };
+    //     return 0;
+    // }
 }
