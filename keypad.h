@@ -3,7 +3,7 @@ extern "C"
 {
 #endif
     void keypadInit();
-    char findPressedKey();
+    uint8_t findPressedKey();
 #ifdef __cplusplus
 }
 #endif

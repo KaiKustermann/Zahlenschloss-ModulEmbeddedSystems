@@ -1,15 +1,18 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <stdio.h>
 
 #include "uart.h"
 #include "logging.h"
 #include "enums.h"
+#include "keypad.h"
 
 uint8_t volatile flag = 0;
 
 void setup()
 {
+    keypadInit();
     loggerInit();
     DDRB |= 1 << PB5;    // set PB5 as output (sets to 1)
     DDRB &= ~(1 << PB4); // set PB4 as Input (sets to 0)
@@ -25,10 +28,14 @@ void setup()
 
 void loop()
 {
+    uint8_t x = findPressedKey();
+    if(x != 0){
+        usartPutChar((unsigned char)x);
+    }
     if (flag)
     {
         PORTB ^= (1 << PB5);
-        logMessage("Hello World", INFO);
+        // logMessage("Hello World", INFO);
         flag = 0;
     }
 }
