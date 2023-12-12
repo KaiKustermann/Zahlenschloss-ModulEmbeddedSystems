@@ -1,11 +1,16 @@
-#include "avr/io.h"
-#include "util/delay.h"
-#include "avr/interrupt.h"
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/interrupt.h>
+
+#include "uart.h"
+#include "logging.h"
+#include "enums.h"
 
 uint8_t volatile flag = 0;
 
 void setup()
 {
+    loggerInit();
     DDRB |= 1 << PB5;    // set PB5 as output (sets to 1)
     DDRB &= ~(1 << PB4); // set PB4 as Input (sets to 0)
     PORTB |= 1 << PB4;   // connect internal pullup for PB4
@@ -20,26 +25,10 @@ void setup()
 
 void loop()
 {
-
-    // if (PINB & (1 << PB4))
-    // {
-    // Pin is high
-    // }
-    // else
-    // {
-    // Pin is low
-    // }
-
-    // // toggle PB5 with 0.5 Hz
-    // PORTB |= 1 << PB5; // set bit
-    // _delay_ms(1000);
-
-    // PORTB &= ~(1 << PB5); // clear bit
-    // _delay_ms(1000);
-
     if (flag)
     {
         PORTB ^= (1 << PB5);
+        logMessage("Hello World", INFO);
         flag = 0;
     }
 }
