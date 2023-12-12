@@ -28,11 +28,13 @@ void logMessage(char* message, LogLevel level){
             break;
     }
 
-    char completeMessage[strlen(prefix) + strlen(message) + 1]; 
+    char completeMessage[strlen(prefix) + strlen(message) + 4]; 
 
     strcpy(completeMessage, prefix);
 
     strcat(completeMessage, message);
+
+    strcat(completeMessage, "; ");
 
     uartPutString(completeMessage);
 }

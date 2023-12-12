@@ -22,7 +22,7 @@ uint8_t keypad[4][4] = {{'1','2','3','A'},
 // detailed: going through the rows (outputs to microcontroller) and applying ground (0) to each row. Then reading the columns (inputs to microcontroller). If the column is 0, the button in this row for this column was pressed.
 void keypadInit(){
     // set rows as output (set to 1) using the data direction registry
-    DDR_KEYPAD |= (1U << ROW_0) | (1U << ROW_1) | (1U << ROW_2) | (1U << ROW_3);
+    DDR_KEYPAD |= (1 << ROW_0) | (1 << ROW_1) | (1 << ROW_2) | (1 << ROW_3);
     // set columns as input (set to 0) using the data direction registry; detailed: 00000001 | 00000010 | 00000100| 00001000 -> 00001111 -> 11110000 -> with bitwise and the pins with 1 stay 1 (e.g. before: DDR_KEYPAD = 10101010; mask: 11110000; result: 10100000)
     DDR_KEYPAD &= ~((1 << COL_0) | (1 << COL_1) | (1 << COL_2) | (1 << COL_3));
     // set internal pullup for columns (set to 1) by setting the right ports to 1
