@@ -6,6 +6,7 @@
 #include "logging.h"
 #include "enums.h"
 #include "keypad.h"
+#include "uart.h"
 
 uint8_t volatile flag = 0;
 
@@ -13,6 +14,7 @@ void setup()
 {
     keypadInit();
     loggerInit();
+    setOnKeyChangedHandler(usartPutChar);
     DDRB |= 1 << PB5;    // set PB5 as output (sets to 1)
     DDRB &= ~(1 << PB4); // set PB4 as Input (sets to 0)
     PORTB |= 1 << PB4;   // connect internal pullup for PB4
@@ -27,17 +29,9 @@ void setup()
 
 void loop()
 {
-    uint8_t pressedKey = findPressedKey();
-    if(pressedKey != 0){
-        char pressedKeyStr[2]; 
-        pressedKeyStr[0] = pressedKey; 
-        pressedKeyStr[1] = '\0'; 
-        logMessage(pressedKeyStr, INFO);
-    }
     if (flag)
     {
         PORTB ^= (1 << PB5);
-        // logMessage("Hello World", INFO);
         flag = 0;
     }
 }
