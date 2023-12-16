@@ -29,6 +29,8 @@ void loop()
     {
         PORTB ^= (1 << PB5);
         logMessage("Hello World", INFO);
+        logMessageInt(1, INFO);
+        logMessageChar('h', INFO);
         flag = 0;
     }
 }
