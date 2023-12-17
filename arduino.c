@@ -7,7 +7,6 @@
 #include "enums.h"
 #include "keypad.h"
 #include "uart.h"
-#include "lock.h"
 
 uint8_t volatile flag = 0;
 
@@ -15,7 +14,6 @@ void setup()
 {
     loggerInit();
     keypadInit();
-    lockInit();
     DDRB |= 1 << PB5;    // set PB5 as output (sets to 1)
     DDRB &= ~(1 << PB4); // set PB4 as Input (sets to 0)
     PORTB |= 1 << PB4;   // connect internal pullup for PB4
@@ -31,7 +29,7 @@ void setup()
 void loop()
 {
     if(hasKeyChanged() != 0){
-        handleKeyChange(setlockInput);
+        handleKeyChange(usartPutChar);
     }
     if (flag)
     {
