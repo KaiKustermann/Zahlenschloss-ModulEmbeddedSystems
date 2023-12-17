@@ -27,6 +27,8 @@ uint8_t keypad[4][4] = {{'1','2','3','A'},
 
 on_key_changed_function_t* onKeyChanged = NULL;
 
+uint8_t keyChanged = 0; //flag thats 1 if key has changed and 0 if not
+
 // using column scanning technique (columns as input to the microcontroller); 
 // detailed: going through the rows (outputs to microcontroller) and applying ground (0) to each row. Then reading the columns (inputs to microcontroller). If the column is 0, the button in this row for this column was pressed.
 void keypadInit(){
@@ -72,16 +74,33 @@ uint8_t findPressedKey(){
     return 0;
 }
 
+uint8_t hasKeyChanged(){
+    return keyChanged;
+}
+
 void setOnKeyChangedHandler(on_key_changed_function_t* handler){
     onKeyChanged = handler;
 }
 
-// interrupt routine for pins of columns
-ISR(PCINT_KEYPAD){
-    if(onKeyChanged != NULL){
+// handles key change using the provided function pointer as callback function
+// if it points to NULL, the function in the variable onKeyChanged is used
+void handleKeyChange(on_key_changed_function_t* handler){
+    if(handler != NULL){
+        const uint8_t pressedKey = findPressedKey();
+        if(pressedKey != 0){
+            handler((unsigned char)pressedKey);
+        }
+    }
+    else if(onKeyChanged != NULL){
         const uint8_t pressedKey = findPressedKey();
         if(pressedKey != 0){
             onKeyChanged((unsigned char)pressedKey);
         }
     }
+    keyChanged = 0;
+}
+
+// interrupt service routine for pins of columns
+ISR(PCINT_KEYPAD){
+    keyChanged = 1;
 }

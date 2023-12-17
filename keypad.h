@@ -9,6 +9,8 @@ extern "C"
     void keypadInit();
     uint8_t findPressedKey();
     void setOnKeyChangedHandler(on_key_changed_function_t* handler);
+    uint8_t hasKeyChanged();
+    void handleKeyChange(on_key_changed_function_t* handler);
 #endif 
 
 #ifdef __cplusplus
