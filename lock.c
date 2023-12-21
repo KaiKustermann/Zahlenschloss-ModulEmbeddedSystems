@@ -8,7 +8,6 @@
 #include "uart.h"
 #include "stringHelpers.h"
 
-// TODO: state set input (during usage not initial setting) with previous pincode check, B to get back to try pincode 
 // TODO: state lock open
 
 #define EEPROM_ADDRESS 0x00
@@ -29,7 +28,7 @@ state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
 unsigned char lockInput = ' ';
 // the pincode that is curently set
-char setPincode[MAX_PINCODE_LENGTH + 1] = "";
+char currentPincode[MAX_PINCODE_LENGTH + 1] = "";
 // is used as temporary state specific variable, cleared on state change
 char pincode[MAX_PINCODE_LENGTH + 1] = "";
 
@@ -56,7 +55,7 @@ uint8_t verifyPincode(char* pincode, char* setPincode){
 
 // function to add non state specific behavior to the keypad
 // returns 0 if the input was handled (succeess) and 1 if the input was not handled (error)
-uint8_t addDefaultKeypadBehavior(unsigned char stateInput){
+uint8_t addDefaultStateBehavior(unsigned char stateInput){
     size_t currentPincodeLength = strlen(pincode);
     if (stateInput == ' ') {
     }
@@ -86,7 +85,7 @@ uint8_t addDefaultKeypadBehavior(unsigned char stateInput){
 
 state_t runStateInitial(unsigned char stateInput, state_t previousState){
     // check if a saved pincode was found in eeprom memory
-    if(setPincode[0] != SENTINEL_VALUE){
+    if(currentPincode[0] != SENTINEL_VALUE){
         return STATE_TRY_PIN_CODE;
     }
     return STATE_SET_PIN_CODE_INITIAL;
@@ -97,13 +96,12 @@ state_t runStateTryPincode(unsigned char stateInput, state_t previousState){
         logMessage("enter pincode", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultKeypadBehavior(stateInput) == 0){
+    if (addDefaultStateBehavior(stateInput) == 0){
         return currentState;
     };
     // state change to state set pincode
     if(stateInput == SECONDARY_KEY){
-        // TODO: state set pincode 
-        return STATE_SET_PIN_CODE_INITIAL;
+        return STATE_SET_PIN_CODE_SUBSTATE_ENTER_CURRENT;
     }
     size_t currentPincodeLength = strlen(pincode);
     // if primary key is pressed, try to open the lock
@@ -113,12 +111,12 @@ state_t runStateTryPincode(unsigned char stateInput, state_t previousState){
             return currentState;
         }
         pincode[currentPincodeLength] = '\0';
-        if(verifyPincode(pincode, setPincode) != 0){
+        if(verifyPincode(pincode, currentPincode) != 0){
             logMessage("the given pincode was right, opening the lock", INFO);
             // TODO: lock open state
             return currentState;
         } 
-        logMessage("the given pincode was wrong, self destruction of safe initiated", INFO);
+        logMessage("the given pincode was wrong", INFO);
         return currentState;
     }
     return currentState;
@@ -129,7 +127,62 @@ state_t runStateSetPincodeInitial(unsigned char stateInput, state_t previousStat
         logMessage("set a new pincode", INFO);
     }
     // if the input was handeled by default keypad behavior, return
-    if (addDefaultKeypadBehavior(stateInput) == 0){
+    if (addDefaultStateBehavior(stateInput) == 0){
+        return currentState;
+    };
+    size_t currentPincodeLength = strlen(pincode);
+    // if primary key is pressed, save the pincode in EEPROM
+    if(stateInput == PRIMARY_KEY){
+        if(currentPincodeLength < MIN_PINCODE_LENGTH){
+            logMessage("the pincode must contain at least 4 characters", INFO);
+            return currentState;
+        }
+        pincode[currentPincodeLength] = '\0';
+        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS, sizeof(pincode));
+        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
+        logMessage("pincode was set", INFO);
+        return STATE_TRY_PIN_CODE;
+    }
+    return currentState;
+};
+
+// substate of state set pincode, which request the user to enter the current pincode
+state_t runStateSetPincodeSubstateEnterCurrent(unsigned char stateInput, state_t previousState){
+    if(currentState != previousState){
+        logMessage("to set a new pincode, enter the current pincode first", INFO);
+    }
+    // if the input was handeled by default keypad behavior, return current state
+    if (addDefaultStateBehavior(stateInput) == 0){
+        return currentState;
+    };
+    if(stateInput == SECONDARY_KEY){
+        return STATE_TRY_PIN_CODE;
+    }
+    size_t currentPincodeLength = strlen(pincode);
+    // if primary key is pressed, try to open the lock
+    if(stateInput == PRIMARY_KEY){
+        if(currentPincodeLength < MIN_PINCODE_LENGTH){
+            logMessage("the pincode must contain at least 4 characters", INFO);
+            return currentState;
+        }
+        pincode[currentPincodeLength] = '\0';
+        if(verifyPincode(pincode, currentPincode) != 0){
+            logMessage("the given pincode was right", INFO);
+            return STATE_SET_PIN_CODE_SUBSTATE_ENTER_NEW;
+        } 
+        logMessage("the given pincode was wrong", INFO);
+        return currentState;
+    }
+    return currentState;
+}
+
+// substate of state set pincode, which request the user to enter the new pincode
+state_t runStateSetPincodeSubstateEnterNew(unsigned char stateInput, state_t previousState){
+    if(currentState != previousState){
+        logMessage("set a new pincode", INFO);
+    }
+    // if the input was handeled by default keypad behavior, return current state
+    if (addDefaultStateBehavior(stateInput) == 0){
         return currentState;
     };
     // state change to state try pincode
@@ -145,22 +198,15 @@ state_t runStateSetPincodeInitial(unsigned char stateInput, state_t previousStat
         }
         pincode[currentPincodeLength] = '\0';
         eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS, sizeof(pincode));
-        eeprom_read_block((void*)setPincode, (const void*)EEPROM_ADDRESS, sizeof(setPincode));
+        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
         logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
-    }
-    return currentState;
-};
-
-state_t runStateSetPincode(unsigned char stateInput, state_t previousState){
-    if(stateInput ==  ' '){
-        return currentState;
     }
     return currentState;
 }
 
 state_func_t* const stateTable[NUM_STATES] = {
-    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincode
+    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincodeSubstateEnterCurrent, runStateSetPincodeSubstateEnterNew
 };
 
 state_t runState(state_t currentState, char stateInput, state_t previousState) {
@@ -172,7 +218,7 @@ void lockInit (void) {
     currentState = STATE_INITIAL;
     previousState = STATE_INITIAL;
     lockInput = ' ';
-    eeprom_read_block((void*)setPincode, (const void*)EEPROM_ADDRESS, sizeof(setPincode));
+    eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
     pincode[0] = '\0';
 }
 
