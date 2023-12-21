@@ -6,35 +6,43 @@
 #include "enums.h"
 
 void loggerInit(){
-    if(isUartInitialized() == 0){
+    if(isUsartInitialized() == 0){
         usartInit();
     }
 }
 
-void logMessage(char* message, LogLevel level){
-    char* prefix;
+void logLogLevel(LogLevel level){
     switch (level) {
         case INFO:
-            prefix = "INFO: ";
+            uartPutString("INFO: ");
             break;
         case WARNING:
-            prefix = "WARNING: ";
+            uartPutString("WARNING: ");
             break;
         case ERROR:
-            prefix = "ERROR: ";
+            uartPutString("ERROR: ");
             break;
         default:
-            prefix = "UNKNOWN: ";
+            uartPutString("INFO: ");
             break;
     }
+}
 
-    char completeMessage[strlen(prefix) + strlen(message) + 4]; 
+void logMessage(char* message, LogLevel level){
+    logLogLevel(level);
+    uartPutString(message);
+    uartPutString("; ");
+}
 
-    strcpy(completeMessage, prefix);
+void logMessageInt(uint8_t message, LogLevel level){
+    logLogLevel(level);
+    char messageAsChar = '0' + message;
+    usartPutChar(messageAsChar);
+    uartPutString("; ");
+}
 
-    strcat(completeMessage, message);
-
-    strcat(completeMessage, "; ");
-
-    uartPutString(completeMessage);
+void logMessageChar(unsigned char message, LogLevel level){
+    logLogLevel(level);
+    usartPutChar(message);
+    uartPutString("; ");
 }

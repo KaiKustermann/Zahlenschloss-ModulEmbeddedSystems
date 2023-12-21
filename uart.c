@@ -26,7 +26,7 @@ void usartInit() {
     uartInitialized = 1;
 }
 
-uint8_t isUartInitialized(){
+uint8_t isUsartInitialized(){
     return uartInitialized;
 }
 
