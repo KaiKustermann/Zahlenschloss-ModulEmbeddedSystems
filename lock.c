@@ -5,7 +5,6 @@
 
 #include "logging.h"
 #include "lock.h"
-#include "uart.h"
 #include "stringHelpers.h"
 
 // TODO: state lock open
@@ -112,9 +111,8 @@ state_t runStateTryPincode(unsigned char stateInput, state_t previousState){
         }
         pincode[currentPincodeLength] = '\0';
         if(verifyPincode(pincode, currentPincode) != 0){
-            logMessage("the given pincode was right, opening the lock", INFO);
-            // TODO: lock open state
-            return currentState;
+            logMessage("the given pincode was right", INFO);
+            return STATE_OPEN;
         } 
         logMessage("the given pincode was wrong", INFO);
         return currentState;
@@ -205,8 +203,22 @@ state_t runStateSetPincodeSubstateEnterNew(unsigned char stateInput, state_t pre
     return currentState;
 }
 
+state_t runStateOpen(unsigned char stateInput, state_t previousState){
+    if(currentState != previousState){
+        logMessage("opening lock", INFO);
+        // turn LED on
+        PORTB ^= (1 << PB5);
+    }
+    if(stateInput == SECONDARY_KEY){
+        // turn LED off
+        PORTB &= ~(1 << PB5);
+        return STATE_TRY_PIN_CODE;
+    }
+    return currentState;
+}
+
 state_func_t* const stateTable[NUM_STATES] = {
-    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincodeSubstateEnterCurrent, runStateSetPincodeSubstateEnterNew
+    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincodeSubstateEnterCurrent, runStateSetPincodeSubstateEnterNew, runStateOpen
 };
 
 state_t runState(state_t currentState, char stateInput, state_t previousState) {
@@ -220,6 +232,8 @@ void lockInit (void) {
     lockInput = ' ';
     eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
     pincode[0] = '\0';
+    // set LED pin as output
+    DDRB |= 1 << PB5; 
 }
 
 void setlockInput(unsigned char input){
