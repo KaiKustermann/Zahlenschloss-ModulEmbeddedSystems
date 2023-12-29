@@ -44,8 +44,8 @@ uint8_t isPinButton(unsigned char button){
 
 // TODO: change to better compare method without time differences
 // returns 1 if the pincode is the same as the set pincode
-uint8_t verifyPincode(char* pincode, char* setPincode){
-    if (strcmp(pincode, setPincode) == 0) {
+uint8_t verifyPincode(char* pincode, char* currentPincode){
+    if (strCmpConstantTime(pincode, currentPincode) == 0) {
         return 1;
     } else {
         return 0;
@@ -55,7 +55,7 @@ uint8_t verifyPincode(char* pincode, char* setPincode){
 // function to add non state specific behavior to the keypad
 // returns 0 if the input was handled (succeess) and 1 if the input was not handled (error)
 uint8_t addDefaultStateBehavior(unsigned char stateInput){
-    size_t currentPincodeLength = strlen(pincode);
+    size_t pincodeLength = strlen(pincode);
     if (stateInput == ' ') {
     }
     else if (stateInput == DELETE_KEY) {
@@ -66,12 +66,12 @@ uint8_t addDefaultStateBehavior(unsigned char stateInput){
         strClear(pincode);
         logMessage(pincode, INFO);
     }
-    else if (currentPincodeLength == MAX_PINCODE_LENGTH) {
+    else if (pincodeLength == MAX_PINCODE_LENGTH) {
         logMessage("the maximum length of the pincode is reached", INFO);
     }
     else if (isPinButton(stateInput)) {
-        pincode[currentPincodeLength] = stateInput;
-        pincode[currentPincodeLength + 1] = '\0';
+        pincode[pincodeLength] = stateInput;
+        pincode[pincodeLength + 1] = '\0';
         logMessage(pincode, INFO);
     }
     else {
@@ -102,14 +102,14 @@ state_t runStateTryPincode(unsigned char stateInput, state_t previousState){
     if(stateInput == SECONDARY_KEY){
         return STATE_SET_PIN_CODE_SUBSTATE_ENTER_CURRENT;
     }
-    size_t currentPincodeLength = strlen(pincode);
+    size_t pincodeLength = strlen(pincode);
     // if primary key is pressed, try to open the lock
     if(stateInput == PRIMARY_KEY){
-        if(currentPincodeLength < MIN_PINCODE_LENGTH){
+        if(pincodeLength < MIN_PINCODE_LENGTH){
             logMessage("the pincode must contain at least 4 characters", INFO);
             return currentState;
         }
-        pincode[currentPincodeLength] = '\0';
+        pincode[pincodeLength] = '\0';
         if(verifyPincode(pincode, currentPincode) != 0){
             logMessage("the given pincode was right", INFO);
             return STATE_OPEN;
@@ -128,14 +128,14 @@ state_t runStateSetPincodeInitial(unsigned char stateInput, state_t previousStat
     if (addDefaultStateBehavior(stateInput) == 0){
         return currentState;
     };
-    size_t currentPincodeLength = strlen(pincode);
+    size_t pincodeLength = strlen(pincode);
     // if primary key is pressed, save the pincode in EEPROM
     if(stateInput == PRIMARY_KEY){
-        if(currentPincodeLength < MIN_PINCODE_LENGTH){
+        if(pincodeLength < MIN_PINCODE_LENGTH){
             logMessage("the pincode must contain at least 4 characters", INFO);
             return currentState;
         }
-        pincode[currentPincodeLength] = '\0';
+        pincode[pincodeLength] = '\0';
         eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS, sizeof(pincode));
         eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
         logMessage("pincode was set", INFO);
@@ -156,14 +156,14 @@ state_t runStateSetPincodeSubstateEnterCurrent(unsigned char stateInput, state_t
     if(stateInput == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
     }
-    size_t currentPincodeLength = strlen(pincode);
+    size_t pincodeLength = strlen(pincode);
     // if primary key is pressed, try to open the lock
     if(stateInput == PRIMARY_KEY){
-        if(currentPincodeLength < MIN_PINCODE_LENGTH){
+        if(pincodeLength < MIN_PINCODE_LENGTH){
             logMessage("the pincode must contain at least 4 characters", INFO);
             return currentState;
         }
-        pincode[currentPincodeLength] = '\0';
+        pincode[pincodeLength] = '\0';
         if(verifyPincode(pincode, currentPincode) != 0){
             logMessage("the given pincode was right", INFO);
             return STATE_SET_PIN_CODE_SUBSTATE_ENTER_NEW;
@@ -187,14 +187,14 @@ state_t runStateSetPincodeSubstateEnterNew(unsigned char stateInput, state_t pre
     if(stateInput == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
     }
-    size_t currentPincodeLength = strlen(pincode);
+    size_t pincodeLength = strlen(pincode);
     // if primary key is pressed, save the pincode in EEPROM
     if(stateInput == PRIMARY_KEY){
-        if(currentPincodeLength < MIN_PINCODE_LENGTH){
+        if(pincodeLength < MIN_PINCODE_LENGTH){
             logMessage("the pincode must contain at least 4 characters", INFO);
             return currentState;
         }
-        pincode[currentPincodeLength] = '\0';
+        pincode[pincodeLength] = '\0';
         eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS, sizeof(pincode));
         eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
         logMessage("pincode was set", INFO);
