@@ -7,21 +7,17 @@
 #include "lock.h"
 #include "stringHelpers.h"
 
-// TODO: state lock open
-
 #define EEPROM_ADDRESS 0x00
 #define SENTINEL_VALUE 0xFF
 #define MAX_PINCODE_LENGTH 20
 #define MIN_PINCODE_LENGTH 4
 
 #define PRIMARY_KEY 'A'
-// TODO: change SECONDARY_KEY to B
-#define SECONDARY_KEY '#'
+#define SECONDARY_KEY 'B'
 #define CLEAR_KEY 'C'
 #define DELETE_KEY 'D'
 
-// TODO: add # to array
-const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0'};
+const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0', '#'};
 
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;

@@ -5,7 +5,7 @@ extern "C"
     void usartInit();
     uint8_t isUsartInitialized();
     void usartPutChar(unsigned char c);
-    void uartPutString(char *s);
+    void usartPutString(char *s);
 
 #ifdef __cplusplus
 }

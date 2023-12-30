@@ -47,7 +47,7 @@ int usartPutChar(unsigned char c)
 }
 
 /* send a string via usart */
-void uartPutString (char *s)
+void usartPutString (char *s)
 {
     while (*s)
     { 

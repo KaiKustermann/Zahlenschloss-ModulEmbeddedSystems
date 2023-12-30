@@ -14,35 +14,35 @@ void loggerInit(){
 void logLogLevel(LogLevel level){
     switch (level) {
         case INFO:
-            uartPutString("INFO: ");
+            usartPutString("INFO: ");
             break;
         case WARNING:
-            uartPutString("WARNING: ");
+            usartPutString("WARNING: ");
             break;
         case ERROR:
-            uartPutString("ERROR: ");
+            usartPutString("ERROR: ");
             break;
         default:
-            uartPutString("INFO: ");
+            usartPutString("INFO: ");
             break;
     }
 }
 
 void logMessage(char* message, LogLevel level){
     logLogLevel(level);
-    uartPutString(message);
-    uartPutString("; ");
+    usartPutString(message);
+    usartPutString("; ");
 }
 
 void logMessageInt(uint8_t message, LogLevel level){
     logLogLevel(level);
     char messageAsChar = '0' + message;
     usartPutChar(messageAsChar);
-    uartPutString("; ");
+    usartPutString("; ");
 }
 
 void logMessageChar(unsigned char message, LogLevel level){
     logLogLevel(level);
     usartPutChar(message);
-    uartPutString("; ");
+    usartPutString("; ");
 }
