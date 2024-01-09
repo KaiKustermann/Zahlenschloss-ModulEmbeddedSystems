@@ -6,10 +6,11 @@
 #include "logging.h"
 #include "lock.h"
 #include "stringHelpers.h"
+#include "eepromHelpers.h"
 
 #define EEPROM_ADDRESS 0x00
-#define SENTINEL_VALUE 0xFF
-#define MAX_PINCODE_LENGTH 20
+// 15 + null terminator = 16 bytes
+#define MAX_PINCODE_LENGTH 15
 #define MIN_PINCODE_LENGTH 4
 
 #define PRIMARY_KEY 'A'
@@ -38,7 +39,6 @@ uint8_t isPinButton(unsigned char button){
     return 0;
 }
 
-// TODO: change to better compare method without time differences
 // returns 1 if the pincode is the same as the set pincode
 uint8_t verifyPincode(char* pincode, char* currentPincode){
     if (strCmpConstantTime(pincode, currentPincode) == 0) {
@@ -79,8 +79,9 @@ uint8_t addDefaultStateBehavior(unsigned char stateInput){
 }
 
 state_t runStateInitial(unsigned char stateInput, state_t previousState){
+    logMessage("welcome", INFO);
     // check if a saved pincode was found in eeprom memory
-    if(currentPincode[0] != SENTINEL_VALUE){
+    if((uint8_t)currentPincode[0] != EEPROM_DEFAULT_VALUE_PER_BYTE){
         return STATE_TRY_PIN_CODE;
     }
     return STATE_SET_PIN_CODE_INITIAL;
@@ -226,6 +227,7 @@ void lockInit (void) {
     currentState = STATE_INITIAL;
     previousState = STATE_INITIAL;
     lockInput = ' ';
+    // read set pincode and write to currentPincode
     eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
     pincode[0] = '\0';
     // set LED pin as output
