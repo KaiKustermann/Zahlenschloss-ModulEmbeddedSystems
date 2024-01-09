@@ -35,10 +35,9 @@ void logMessage(char* message, LogLevel level){
 }
 
 void logMessageInt(uint8_t message, LogLevel level){
-    logLogLevel(level);
-    char messageAsChar = '0' + message;
-    usartPutChar(messageAsChar);
-    usartPutString("; ");
+    char str[4];
+    sprintf(str, "%u", message);
+    logMessage(str, level);
 }
 
 void logMessageChar(unsigned char message, LogLevel level){
