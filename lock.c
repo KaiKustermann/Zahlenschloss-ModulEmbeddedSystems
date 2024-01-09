@@ -7,9 +7,15 @@
 #include "lock.h"
 #include "stringHelpers.h"
 #include "eepromHelpers.h"
+#include "hashing.h"
 
-#define EEPROM_ADDRESS 0x00
-// 15 + null terminator = 16 bytes
+
+#define EEPROM_ADDRESS_SALT 0x00
+#define SALT_SIZE 8
+// EEPROM_ADDRESS_PINCODE depends on salt size, as this is also saved to eeprom
+#define EEPROM_ADDRESS_PINCODE (EEPROM_ADDRESS_SALT + SALT_SIZE)
+#define HASHED_PINCODE_LENGTH 8
+// 15 + null terminator = 16
 #define MAX_PINCODE_LENGTH 15
 #define MIN_PINCODE_LENGTH 4
 
@@ -46,6 +52,21 @@ uint8_t verifyPincode(char* pincode, char* currentPincode){
     } else {
         return 0;
     }
+}
+
+// saves pincode to eeprom and hashes it beforehand
+void savePincode(char* pincode){
+    char salt[SALT_SIZE];
+    generateSalt(salt, sizeof(salt));
+    eeprom_write_block((const void*)salt, (void*)EEPROM_ADDRESS_SALT, sizeof(salt));
+    char hashedPincode[HASHED_PINCODE_LENGTH];
+    hashPincode(pincode, hashedPincode, salt);
+    eeprom_write_block((const void*)hashedPincode, (void*)EEPROM_ADDRESS_PINCODE, sizeof(hashedPincode));
+
+    // const char* test = "test";
+    // char hash[HASH_SIZE];
+    // hashPincode(test, hash);
+    // logMessage(hash, INFO);
 }
 
 // function to add non state specific behavior to the keypad
@@ -133,8 +154,8 @@ state_t runStateSetPincodeInitial(unsigned char stateInput, state_t previousStat
             return currentState;
         }
         pincode[pincodeLength] = '\0';
-        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS, sizeof(pincode));
-        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
+        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS_PINCODE, sizeof(pincode));
+        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS_PINCODE, sizeof(currentPincode));
         logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
     }
@@ -192,8 +213,8 @@ state_t runStateSetPincodeSubstateEnterNew(unsigned char stateInput, state_t pre
             return currentState;
         }
         pincode[pincodeLength] = '\0';
-        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS, sizeof(pincode));
-        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
+        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS_PINCODE, sizeof(pincode));
+        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS_PINCODE, sizeof(currentPincode));
         logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
     }
@@ -228,7 +249,7 @@ void lockInit (void) {
     previousState = STATE_INITIAL;
     lockInput = ' ';
     // read set pincode and write to currentPincode
-    eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS, sizeof(currentPincode));
+    eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS_PINCODE, sizeof(currentPincode));
     pincode[0] = '\0';
     // set LED pin as output
     DDRB |= 1 << PB5; 
@@ -238,7 +259,7 @@ void setlockInput(unsigned char input){
     lockInput = input;
 }
 
-void handleStateChange(){
+void handleGenericStateChange(){
     // clear pincode variable bewteen state changes because it is state specific
     pincode[0] = '\0';
 }
@@ -248,6 +269,6 @@ void lockRun(){
     currentState = runState(currentState, lockInput, previousState);
     previousState = previousStateLocal;
     if(previousState != currentState){
-        handleStateChange();
+        handleGenericStateChange();
     }
 }
