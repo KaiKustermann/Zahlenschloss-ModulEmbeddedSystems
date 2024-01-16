@@ -45,19 +45,13 @@ uint8_t isPinButton(unsigned char button){
 }
 
 void saveSalt(char* salt){
-    logMessage("saving salt", INFO);
-    logMessage(salt, INFO);
     eeprom_write_block((const void*)salt, (void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
     char saltRetrieved[HASHING_SALT_SIZE];
     eeprom_read_block((void*)saltRetrieved, (const void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
-    logMessage("saved salt", INFO);
-    logMessage(saltRetrieved, INFO);
 }
 
 void getSavedSalt(char* dest){
     eeprom_read_block((void*)dest, (const void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
-    logMessage("retrieving salt", INFO);
-    logMessage(dest, INFO);
 }
 
 // reads the saved pincode from EEPROM and saves it in dest
@@ -72,12 +66,9 @@ void savePincode(char* pincode){
     char hashedPincodeTemp[SAVED_PINCODE_SIZE];
     hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt);
     logMessage("saving pincode...", INFO);
-    logMessage("salt:", INFO);
-    logMessage(salt, INFO);
-    logMessage("hashedPincodeTemp:", INFO);
-    logMessage(hashedPincodeTemp, INFO);
     saveSalt(salt);
     eeprom_write_block((const void*)hashedPincodeTemp, (void*)EEPROM_ADDRESS_SAVED_PINCODE, sizeof(hashedPincodeTemp));
+    logMessage("pincode saved!", INFO);
 }
 
 // returns 1 if the pincode is the same as the saved pincode
@@ -85,20 +76,16 @@ uint8_t verifyPincode(char* pincode){
     // hashing pincode before comparing
     char salt[HASHING_SALT_SIZE];
     getSavedSalt(salt);
-    logMessage("salt", INFO);
-    logMessage(salt, INFO);
     char hashedPincodeTemp[SAVED_PINCODE_SIZE];
     hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt);
     char savedHashedPincodeTemp[SAVED_PINCODE_SIZE];
     getSavedPincode(savedHashedPincodeTemp);
-    logMessage("verifying pincode", INFO);
-    logMessage("hashedPincodeTemp:", INFO);
-    logMessage(hashedPincodeTemp, INFO);
-    logMessage("savedHashedPincodeTemp:", INFO);
-    logMessage(savedHashedPincodeTemp, INFO);
+    logMessage("verifying pincode...", INFO);
     if (strCmpConstantTime(hashedPincodeTemp, savedHashedPincodeTemp) == 0) {
+        logMessage("pincode is correct!", INFO);
         return 1;
     } else {
+        logMessage("pincode is incorrect!", INFO);
         return 0;
     }
 }
@@ -134,7 +121,7 @@ uint8_t addDefaultStateBehavior(unsigned char stateInput){
 }
 
 state_t runStateInitial(unsigned char stateInput, state_t previousState){
-    logMessage("welcome", INFO);
+    logMessage("welcome!", INFO);
     // check if a saved pincode was found in EEPROM memory
     char savedPincode[SAVED_PINCODE_SIZE];
     getSavedPincode(savedPincode);
@@ -165,10 +152,8 @@ state_t runStateTryPincode(unsigned char stateInput, state_t previousState){
         }
         pincode[pincodeLength] = '\0';
         if(verifyPincode(pincode) != 0){
-            logMessage("the given pincode was right", INFO);
             return STATE_OPEN;
-        } 
-        logMessage("the given pincode was wrong", INFO);
+        }
         return currentState;
     }
     return currentState;
@@ -191,7 +176,6 @@ state_t runStateSetPincodeInitial(unsigned char stateInput, state_t previousStat
         }
         pincode[pincodeLength] = '\0';
         savePincode(pincode);
-        logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
     }
     return currentState;
@@ -219,10 +203,8 @@ state_t runStateSetPincodeSubstateEnterCurrent(unsigned char stateInput, state_t
         }
         pincode[pincodeLength] = '\0';
         if(verifyPincode(pincode) != 0){
-            logMessage("the given pincode was right", INFO);
             return STATE_SET_PIN_CODE_SUBSTATE_ENTER_NEW;
-        } 
-        logMessage("the given pincode was wrong", INFO);
+        }
         return currentState;
     }
     return currentState;
@@ -250,7 +232,6 @@ state_t runStateSetPincodeSubstateEnterNew(unsigned char stateInput, state_t pre
         }
         pincode[pincodeLength] = '\0';
         savePincode(pincode);
-        logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
     }
     return currentState;
