@@ -10,11 +10,11 @@
 #include "hashing.h"
 
 
-#define EEPROM_ADDRESS_SALT 0x00
-#define SALT_SIZE 8
-// EEPROM_ADDRESS_PINCODE depends on salt size, as this is also saved to eeprom
-#define EEPROM_ADDRESS_PINCODE (EEPROM_ADDRESS_SALT + SALT_SIZE)
-#define HASHED_PINCODE_LENGTH 8
+#define EEPROM_ADDRESS_HASHING_SALT 0x00
+#define HASHING_SALT_SIZE 8U
+// EEPROM_ADDRESS_PINCODE depends on salt size, as this is also saved to EEPROM
+#define EEPROM_ADDRESS_SAVED_PINCODE (EEPROM_ADDRESS_HASHING_SALT + HASHING_SALT_SIZE)
+#define SAVED_PINCODE_SIZE 10U
 // 15 + null terminator = 16
 #define MAX_PINCODE_LENGTH 15
 #define MIN_PINCODE_LENGTH 4
@@ -29,8 +29,7 @@ const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0',
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
 unsigned char lockInput = ' ';
-// the pincode that is curently set
-char currentPincode[MAX_PINCODE_LENGTH + 1] = "";
+
 // is used as temporary state specific variable, cleared on state change
 char pincode[MAX_PINCODE_LENGTH + 1] = "";
 
@@ -45,28 +44,63 @@ uint8_t isPinButton(unsigned char button){
     return 0;
 }
 
-// returns 1 if the pincode is the same as the set pincode
-uint8_t verifyPincode(char* pincode, char* currentPincode){
-    if (strCmpConstantTime(pincode, currentPincode) == 0) {
+void saveSalt(char* salt){
+    logMessage("saving salt", INFO);
+    logMessage(salt, INFO);
+    eeprom_write_block((const void*)salt, (void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
+    char saltRetrieved[HASHING_SALT_SIZE];
+    eeprom_read_block((void*)saltRetrieved, (const void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
+    logMessage("saved salt", INFO);
+    logMessage(saltRetrieved, INFO);
+}
+
+void getSavedSalt(char* dest){
+    eeprom_read_block((void*)dest, (const void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
+    logMessage("retrieving salt", INFO);
+    logMessage(dest, INFO);
+}
+
+// reads the saved pincode from EEPROM and saves it in dest
+void getSavedPincode(char* dest){
+    eeprom_read_block((void*)dest, (const void*)EEPROM_ADDRESS_SAVED_PINCODE, SAVED_PINCODE_SIZE);
+}
+
+// saves pincode to EEPROM and hashes it beforehand
+void savePincode(char* pincode){
+    char salt[HASHING_SALT_SIZE];
+    generateSalt(salt, sizeof(salt));
+    char hashedPincodeTemp[SAVED_PINCODE_SIZE];
+    hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt);
+    logMessage("saving pincode...", INFO);
+    logMessage("salt:", INFO);
+    logMessage(salt, INFO);
+    logMessage("hashedPincodeTemp:", INFO);
+    logMessage(hashedPincodeTemp, INFO);
+    saveSalt(salt);
+    eeprom_write_block((const void*)hashedPincodeTemp, (void*)EEPROM_ADDRESS_SAVED_PINCODE, sizeof(hashedPincodeTemp));
+}
+
+// returns 1 if the pincode is the same as the saved pincode
+uint8_t verifyPincode(char* pincode){
+    // hashing pincode before comparing
+    char salt[HASHING_SALT_SIZE];
+    getSavedSalt(salt);
+    logMessage("salt", INFO);
+    logMessage(salt, INFO);
+    char hashedPincodeTemp[SAVED_PINCODE_SIZE];
+    hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt);
+    char savedHashedPincodeTemp[SAVED_PINCODE_SIZE];
+    getSavedPincode(savedHashedPincodeTemp);
+    logMessage("verifying pincode", INFO);
+    logMessage("hashedPincodeTemp:", INFO);
+    logMessage(hashedPincodeTemp, INFO);
+    logMessage("savedHashedPincodeTemp:", INFO);
+    logMessage(savedHashedPincodeTemp, INFO);
+    if (strCmpConstantTime(hashedPincodeTemp, savedHashedPincodeTemp) == 0) {
         return 1;
     } else {
         return 0;
     }
-}
-
-// saves pincode to eeprom and hashes it beforehand
-void savePincode(char* pincode){
-    char salt[SALT_SIZE];
-    generateSalt(salt, sizeof(salt));
-    eeprom_write_block((const void*)salt, (void*)EEPROM_ADDRESS_SALT, sizeof(salt));
-    char hashedPincode[HASHED_PINCODE_LENGTH];
-    hashPincode(pincode, hashedPincode, salt);
-    eeprom_write_block((const void*)hashedPincode, (void*)EEPROM_ADDRESS_PINCODE, sizeof(hashedPincode));
-
-    // const char* test = "test";
-    // char hash[HASH_SIZE];
-    // hashPincode(test, hash);
-    // logMessage(hash, INFO);
 }
 
 // function to add non state specific behavior to the keypad
@@ -101,8 +135,10 @@ uint8_t addDefaultStateBehavior(unsigned char stateInput){
 
 state_t runStateInitial(unsigned char stateInput, state_t previousState){
     logMessage("welcome", INFO);
-    // check if a saved pincode was found in eeprom memory
-    if((uint8_t)currentPincode[0] != EEPROM_DEFAULT_VALUE_PER_BYTE){
+    // check if a saved pincode was found in EEPROM memory
+    char savedPincode[SAVED_PINCODE_SIZE];
+    getSavedPincode(savedPincode);
+    if((uint8_t)savedPincode[0] != EEPROM_DEFAULT_VALUE_PER_BYTE){
         return STATE_TRY_PIN_CODE;
     }
     return STATE_SET_PIN_CODE_INITIAL;
@@ -128,7 +164,7 @@ state_t runStateTryPincode(unsigned char stateInput, state_t previousState){
             return currentState;
         }
         pincode[pincodeLength] = '\0';
-        if(verifyPincode(pincode, currentPincode) != 0){
+        if(verifyPincode(pincode) != 0){
             logMessage("the given pincode was right", INFO);
             return STATE_OPEN;
         } 
@@ -154,8 +190,7 @@ state_t runStateSetPincodeInitial(unsigned char stateInput, state_t previousStat
             return currentState;
         }
         pincode[pincodeLength] = '\0';
-        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS_PINCODE, sizeof(pincode));
-        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS_PINCODE, sizeof(currentPincode));
+        savePincode(pincode);
         logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
     }
@@ -172,6 +207,7 @@ state_t runStateSetPincodeSubstateEnterCurrent(unsigned char stateInput, state_t
         return currentState;
     };
     if(stateInput == SECONDARY_KEY){
+        logMessage("B pressed", INFO);
         return STATE_TRY_PIN_CODE;
     }
     size_t pincodeLength = strlen(pincode);
@@ -182,7 +218,7 @@ state_t runStateSetPincodeSubstateEnterCurrent(unsigned char stateInput, state_t
             return currentState;
         }
         pincode[pincodeLength] = '\0';
-        if(verifyPincode(pincode, currentPincode) != 0){
+        if(verifyPincode(pincode) != 0){
             logMessage("the given pincode was right", INFO);
             return STATE_SET_PIN_CODE_SUBSTATE_ENTER_NEW;
         } 
@@ -213,8 +249,7 @@ state_t runStateSetPincodeSubstateEnterNew(unsigned char stateInput, state_t pre
             return currentState;
         }
         pincode[pincodeLength] = '\0';
-        eeprom_write_block((const void*)pincode, (void*)EEPROM_ADDRESS_PINCODE, sizeof(pincode));
-        eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS_PINCODE, sizeof(currentPincode));
+        savePincode(pincode);
         logMessage("pincode was set", INFO);
         return STATE_TRY_PIN_CODE;
     }
@@ -248,8 +283,7 @@ void lockInit (void) {
     currentState = STATE_INITIAL;
     previousState = STATE_INITIAL;
     lockInput = ' ';
-    // read set pincode and write to currentPincode
-    eeprom_read_block((void*)currentPincode, (const void*)EEPROM_ADDRESS_PINCODE, sizeof(currentPincode));
+    // reset temporary pincode variable that lives as long as a state
     pincode[0] = '\0';
     // set LED pin as output
     DDRB |= 1 << PB5; 

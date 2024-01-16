@@ -19,6 +19,7 @@ void strClear(char* string){
 // compares to strings, where the execution time is independent of the length of s2 (therefore s1 should be user input)
 // returns 0 if both strings contain the same value, a non zero value if the strings are different
 uint8_t strCmpConstantTime(const char *s1, const char *s2) {
+    // volatile keyword, that the cpu loads it always into the register from memory and does not keep it -> always same time behavior 
     uint8_t result = 0;
     volatile size_t index_s1 = 0;
     volatile size_t index_s2 = 0;

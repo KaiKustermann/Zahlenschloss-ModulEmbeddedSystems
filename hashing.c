@@ -28,8 +28,8 @@ void generateSalt(char *salt, size_t saltSize) {
     salt[saltSize - 1] = '\0'; 
 }
 
-// hash the password with salt
-void hashPincode(char *pincode, char *hashedPincode, char* salt) {
+// hash the pincode with salt
+void hashPincode(char *pincode, char *hashedPincode, size_t hashedPincodeSize, char* salt) {
     // the format specifier %08lx pads the returned string with leading zeros, if the string is less than 8 hexadecimal values long
-    snprintf(hashedPincode, sizeof(hashedPincode), "%08lx", hashDJB2(pincode) ^ hashDJB2(salt));
+    snprintf(hashedPincode, hashedPincodeSize, "%08lx", hashDJB2(pincode) ^ hashDJB2(salt));
 }
