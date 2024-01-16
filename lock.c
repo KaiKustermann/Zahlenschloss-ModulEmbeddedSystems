@@ -46,8 +46,6 @@ uint8_t isPinButton(unsigned char button){
 
 void saveSalt(char* salt){
     eeprom_write_block((const void*)salt, (void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
-    char saltRetrieved[HASHING_SALT_SIZE];
-    eeprom_read_block((void*)saltRetrieved, (const void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
 }
 
 void getSavedSalt(char* dest){
@@ -246,6 +244,15 @@ void lockInit (void) {
     pincode[0] = '\0';
     // set LED pin as output
     DDRB |= 1 << PB5; 
+}
+
+void lockReset(){
+    // turn off LED if it was on
+    PORTB &= ~(1 << PB5);
+    // clear EEPROM
+    eepromReset();
+    // reinitialize the lock system
+    lockInit();
 }
 
 void setlockInput(unsigned char input){
