@@ -1,19 +1,38 @@
 #include <avr/io.h>
-#include <util/delay.h>
+#include <util/atomic.h>
+#include <avr/interrupt.h>
 
-void initTimer() {
-    // initialize Timer1 (16 bit timer) in normal mode with 1024 as prescaler (up to 4 seconds until timer overflow)
-    TCCR1B |= (1 << CS10);
+#include "timerHelpers.h"
+
+// compare match interrupt gets fired every ms 
+ISR(TIMER1_COMPA_vect)
+{
+    timerMillis++;
 }
 
-void resetTimer() {
-    // clear the bits responsible for prescaler to stop the timer
-    TCCR1B &= ~(1 << CS10);
-    // reset the timer value to 1
-    TCNT1 = 0x0001;
+void initMillis()
+{
+    unsigned long CTCMatchOverflow = ((F_CPU / 1000) / 8); //when timer1 is this value, 1ms has passed (with 8 bit prescaler)
+
+    // set timer to clear when matching CTCMatchOverflow), setting prescaler to 8
+    TCCR1B |= (1 << WGM12) | (1 << CS11);
+
+    // high byte first, then low byte
+    OCR1AH = (CTCMatchOverflow >> 8);
+    OCR1AL = CTCMatchOverflow;
+
+    // enable the compare match interrupt
+    TIMSK1 |= (1 << OCIE1A);
 }
 
-uint32_t millis() {
-    // Timer1 is a 16-bit timer, and the clock frequency is 1 MHz
-    return (TCNT1 * 1000UL) / 1000;
+unsigned long millis (void)
+{
+  unsigned long millisReturn;
+
+  // ensures this cannot be interrupted by other ISRs
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    millisReturn = timerMillis;
+  }
+
+  return millisReturn;
 }

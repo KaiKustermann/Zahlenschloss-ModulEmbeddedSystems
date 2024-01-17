@@ -7,9 +7,10 @@ extern "C"
 
 #ifndef TIMER_HELPERS_H
 #define TIMER_HELPERS_H
-void initTimer();
-void resetTimer();
-uint32_t millis();    
+volatile unsigned long timerMillis;
+ISR(TIMER1_COMPA_vect);
+void initMillis();
+unsigned long millis (void);
 #endif 
 
 #ifdef __cplusplus
