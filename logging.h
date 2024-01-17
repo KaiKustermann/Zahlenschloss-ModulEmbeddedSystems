@@ -9,6 +9,7 @@ extern "C"
     void logMessage(char* message, LogLevel level);
     void logMessageInt(uint8_t message, LogLevel level);
     void logMessageChar(unsigned char message, LogLevel level);
+    void logMessageUInt32(uint32_t message, LogLevel level);
 
 #ifdef __cplusplus
 }

@@ -6,6 +6,7 @@
 #include "keypad.h"
 #include "logging.h"
 #include "uart.h"
+#include "timerHelpers.h"
 
 #define DDR_KEYPAD_ROWS DDRD
 #define DDR_KEYPAD_COLS DDRB
@@ -31,9 +32,15 @@ uint8_t keypad[4][4] = {{'1','2','3','A'},
                         {'7','8','9','C'},
                         {'*','0','#','D'}};
 
-on_key_changed_function_t* onKeyChanged = NULL;
+uint8_t keyChanged = 0; //flag that is a non zero value if a key has changed and 0 if it has not
 
-uint8_t keyChanged = 0; //flag thats 1 if key has changed and 0 if not
+uint8_t keyHasBeenReleased = 0; //flag that is a non zero value if a key has been released and 0 if it has not
+
+uint8_t lastPressedKey = 0;
+
+uint32_t startTimeKeyPress = 0;
+
+uint32_t timeSinceKeyPressInit = 0;
 
 // using column scanning technique (columns as input to the microcontroller); 
 // detailed: going through the rows (outputs to microcontroller) and applying ground (0) to each row. Then reading the columns (inputs to microcontroller). If the column is 0, the button in this row for this column was pressed.
@@ -80,30 +87,42 @@ uint8_t findPressedKey(){
     return 0;
 }
 
+// returns a non zero value if the key has been changed (pressed or released)
 uint8_t hasKeyChanged(){
     return keyChanged;
 }
 
-void setOnKeyChangedHandler(on_key_changed_function_t* handler){
-    onKeyChanged = handler;
+uint8_t hasKeyBeenReleased(){
+    return keyHasBeenReleased;
 }
 
-// handles key change using the provided function pointer as callback function
-// if it points to NULL, the function in the variable onKeyChanged is used
-void handleKeyChange(on_key_changed_function_t* handler){
-    if(handler != NULL){
-        const uint8_t pressedKey = findPressedKey();
-        if(pressedKey != 0){
-            handler((unsigned char)pressedKey);
+uint8_t getPressedKey(){
+    return lastPressedKey;
+}
+
+uint32_t getTimeSinceKeyPressInit(){
+    return timeSinceKeyPressInit;
+}
+
+void keypadRun(){
+    keyHasBeenReleased = 0;
+    // check if key has been pressed or released
+    if(hasKeyChanged() != 0){
+        uint8_t pressedKeyLocal = findPressedKey();
+        // handle case where key has been pressed
+        if(pressedKeyLocal != 0){
+            initTimer(); 
+            lastPressedKey = pressedKeyLocal;
+        } 
+        // handle case where key has been released
+        else {
+            timeSinceKeyPressInit = getMillis();
+            keyHasBeenReleased = 1;
+            resetTimer();
         }
+        // reset keyChanged variable
+        keyChanged = 0;
     }
-    else if(onKeyChanged != NULL){
-        const uint8_t pressedKey = findPressedKey();
-        if(pressedKey != 0){
-            onKeyChanged((unsigned char)pressedKey);
-        }
-    }
-    keyChanged = 0;
 }
 
 // interrupt service routine for pins of columns

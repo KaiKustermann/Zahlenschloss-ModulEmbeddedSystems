@@ -8,9 +8,11 @@ extern "C"
     typedef void on_key_changed_function_t(unsigned char pressedButton);
     void keypadInit();
     uint8_t findPressedKey();
-    void setOnKeyChangedHandler(on_key_changed_function_t* handler);
     uint8_t hasKeyChanged();
-    void handleKeyChange(on_key_changed_function_t* handler);
+    uint8_t hasKeyBeenReleased();
+    uint8_t getPressedKey();
+    uint32_t getTimeSinceKeyPressInit();
+    void keypadRun();
 #endif 
 
 #ifdef __cplusplus

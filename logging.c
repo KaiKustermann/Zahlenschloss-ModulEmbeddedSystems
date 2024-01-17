@@ -45,3 +45,9 @@ void logMessageChar(unsigned char message, LogLevel level){
     usartPutChar(message);
     usartPutString("; ");
 }
+
+void logMessageUInt32(uint32_t message, LogLevel level) {
+    char str[12];
+    sprintf(str, "%lu", (unsigned long)message);
+    logMessage(str, level);
+}
