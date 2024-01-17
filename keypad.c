@@ -119,9 +119,7 @@ void keypadRun(){
             logMessageUInt32(startTimeKeyPress, INFO);
             timeSinceKeyPressInit = millis() - startTimeKeyPress;
             keyHasBeenReleased = 1;
-
             startTimeKeyPress = 0;
-            resetTimer();
         } 
         // handle case where key has been pressed
         else {
