@@ -9,8 +9,9 @@ extern "C"
 #define TIMER_HELPERS_H
 volatile unsigned long timerMillis;
 ISR(TIMER1_COMPA_vect);
-void initMillis();
-unsigned long millis (void);
+void initTimer();
+void resetTimer();
+unsigned long getMillis (void);
 #endif 
 
 #ifdef __cplusplus

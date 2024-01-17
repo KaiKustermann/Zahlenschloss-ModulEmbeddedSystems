@@ -20,7 +20,7 @@ void loop()
         const uint32_t timeSinceKeyPressed = getTimeSinceKeyPressInit();
         logMessageUInt32(timeSinceKeyPressed, INFO);
         if(pressedKey != 0){
-            setlockInput((unsigned char)pressedKey);
+            setlockInput((unsigned char)pressedKey, timeSinceKeyPressed);
         }
     }
     lockRun();

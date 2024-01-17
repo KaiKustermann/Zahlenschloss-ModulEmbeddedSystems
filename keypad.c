@@ -107,27 +107,18 @@ uint32_t getTimeSinceKeyPressInit(){
 void keypadRun(){
     keyHasBeenReleased = 0;
     // check if key has been pressed or released
-    initTimer(); 
-    logMessageUInt32(millis(), INFO);
     if(hasKeyChanged() != 0){
         uint8_t pressedKeyLocal = findPressedKey();
-        // handle case where key has been released
-        if(pressedKeyLocal == 0){
-            logMessage("millis", INFO);
-            logMessageUInt32(millis(), INFO);
-            logMessage("startTimeKeypress", INFO);
-            logMessageUInt32(startTimeKeyPress, INFO);
-            timeSinceKeyPressInit = millis() - startTimeKeyPress;
-            keyHasBeenReleased = 1;
-            startTimeKeyPress = 0;
-        } 
         // handle case where key has been pressed
-        else {
-            initTimer();  
-            startTimeKeyPress = millis();
-            logMessage("startTimeKeyPress", INFO);
-            logMessageUInt32(startTimeKeyPress, INFO);
+        if(pressedKeyLocal != 0){
+            initTimer(); 
             lastPressedKey = pressedKeyLocal;
+        } 
+        // handle case where key has been released
+        else {
+            timeSinceKeyPressInit = getMillis();
+            keyHasBeenReleased = 1;
+            resetTimer();
         }
         // reset keyChanged variable
         keyChanged = 0;
