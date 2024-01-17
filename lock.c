@@ -23,6 +23,7 @@
 #define SECONDARY_KEY 'B'
 #define CLEAR_KEY 'C'
 #define DELETE_KEY 'D'
+#define PRESS_DURATION_RESET 4000UL
 
 const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0', '#'};
 
@@ -89,9 +90,39 @@ uint8_t verifyPincode(char* pincode){
     }
 }
 
-// function to add non state specific behavior to the keypad
+void lockInit (void) {
+    currentState = STATE_INITIAL;
+    previousState = STATE_INITIAL;
+    lockKeyInput = ' ';
+    lockKeyPressDuration = 0;
+    // reset temporary pincode variable that lives as long as a state
+    pincode[0] = '\0';
+    // set LED pin as output
+    DDRB |= 1 << PB5; 
+}
+
+void lockReset(){
+    // turn off LED if it was on
+    PORTB &= ~(1 << PB5);
+    // clear EEPROM
+    eepromReset();
+    // reinitialize the lock system
+    lockInit();
+}
+
+void setlockInput(unsigned char keyInput, uint32_t keyPressDuration){
+    lockKeyInput = keyInput;
+    lockKeyPressDuration = keyPressDuration;
+}
+
+void handleGenericStateChange(){
+    // clear pincode variable bewteen state changes because it is state specific
+    pincode[0] = '\0';
+}
+
+// adds non state specific behavior to the keypad
 // returns 0 if the input was handled (succeess) and 1 if the input was not handled (error)
-uint8_t addDefaultStateBehavior(){
+uint8_t addDefaultKeypadBehavior(){
     size_t pincodeLength = strlen(pincode);
     if (lockKeyInput == ' ') {
     }
@@ -122,6 +153,15 @@ uint8_t addDefaultStateBehavior(){
     return 0;
 }
 
+// checks if the user initiated a system reset
+// returns a non zero value if it is initiated and 0 if no reset is initiated
+uint8_t isResetSystemInitiated(){
+    if(lockKeyInput == CLEAR_KEY && lockKeyPressDuration > 5000){
+        return 1;
+    }
+    return 0;
+}
+
 state_t runStateInitial(){
     logMessage("welcome!", INFO);
     // check if a saved pincode was found in EEPROM memory
@@ -138,9 +178,9 @@ state_t runStateTryPincode(){
         logMessage("enter pincode", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultStateBehavior() == 0){
+    if (addDefaultKeypadBehavior() == 0){
         return currentState;
-    };
+    }
     // state change to state set pincode
     if(lockKeyInput == SECONDARY_KEY){
         return STATE_SET_PIN_CODE_SUBSTATE_ENTER_CURRENT;
@@ -160,9 +200,9 @@ state_t runStateSetPincodeInitial(){
         logMessage("set a new pincode", INFO);
     }
     // if the input was handeled by default keypad behavior, return
-    if (addDefaultStateBehavior() == 0){
+    if (addDefaultKeypadBehavior() == 0){
         return currentState;
-    };
+    }
     // if primary key is pressed, save the pincode in EEPROM
     if(lockKeyInput == PRIMARY_KEY){
         savePincode(pincode);
@@ -177,9 +217,9 @@ state_t runStateSetPincodeSubstateEnterCurrent(){
         logMessage("to set a new pincode, enter the current pincode first", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultStateBehavior() == 0){
+    if (addDefaultKeypadBehavior() == 0){
         return currentState;
-    };
+    }
     if(lockKeyInput == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
     }
@@ -199,9 +239,9 @@ state_t runStateSetPincodeSubstateEnterNew(){
         logMessage("set a new pincode", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultStateBehavior() == 0){
+    if (addDefaultKeypadBehavior() == 0){
         return currentState;
-    };
+    }
     // state change to state try pincode
     if(lockKeyInput == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
@@ -228,42 +268,40 @@ state_t runStateOpen(){
     return currentState;
 }
 
+
+state_t runStateReset(){
+    if(currentState != previousState){
+        logMessage("enter the current pincode to complete reset", INFO);
+    }
+    // if the input was handeled by default keypad behavior, return current state
+    if (addDefaultKeypadBehavior() == 0){
+        return currentState;
+    }
+    // cancel reset if secondary key is pressed
+    if(lockKeyInput == SECONDARY_KEY){
+        return STATE_TRY_PIN_CODE;
+    }
+    // if primary key is pressed, verify entered pincode
+    if(lockKeyInput == PRIMARY_KEY){
+        if(verifyPincode(pincode) != 0){
+            lockReset();
+            return STATE_INITIAL;
+        }
+        return currentState;
+    }
+    return currentState;
+}
+
 state_func_t* const stateTable[NUM_STATES] = {
-    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincodeSubstateEnterCurrent, runStateSetPincodeSubstateEnterNew, runStateOpen
+    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincodeSubstateEnterCurrent, runStateSetPincodeSubstateEnterNew, runStateOpen, runStateReset
 };
 
 state_t runState() {
+    if(isResetSystemInitiated() != 0){
+        return STATE_RESET;
+    }
     return stateTable[currentState]();
 };
-
-void lockInit (void) {
-    currentState = STATE_INITIAL;
-    previousState = STATE_INITIAL;
-    lockKeyInput = ' ';
-    // reset temporary pincode variable that lives as long as a state
-    pincode[0] = '\0';
-    // set LED pin as output
-    DDRB |= 1 << PB5; 
-}
-
-void lockReset(){
-    // turn off LED if it was on
-    PORTB &= ~(1 << PB5);
-    // clear EEPROM
-    eepromReset();
-    // reinitialize the lock system
-    lockInit();
-}
-
-void setlockInput(unsigned char keyInput, uint32_t keyPressDuration){
-    lockKeyInput = keyInput;
-    lockKeyPressDuration = keyPressDuration;
-}
-
-void handleGenericStateChange(){
-    // clear pincode variable bewteen state changes because it is state specific
-    pincode[0] = '\0';
-}
 
 void lockRun(){
     const state_t previousStateLocal = currentState;
