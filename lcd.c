@@ -7,6 +7,10 @@ unsigned char portlcd = 0;
 
 void LCDInit(void)
 {
+
+	I2CInit();
+	_delay_ms(50);
+
 	LCDsend4Bit(0b00000011);
 	_delay_ms(5);
 	LCDsend4Bit(0b00000011);
@@ -17,11 +21,30 @@ void LCDInit(void)
 	_delay_ms(1);
 	LCDsend8Bit(0b00101000, 0); // Data 4bit, Line 2, Font 5x8
 	_delay_ms(1);
-	LCDsend8Bit(0b00001110, 0); // Display ON, Cursor ON, Blink OFF
+	LCDsend8Bit(0b00001111, 0); // Display ON, Cursor ON, Blink ON
 	_delay_ms(1);
 
 	I2CSendByAddr(portlcd |= 0x08, 0x4E);  // BackLight ON
 	I2CSendByAddr(portlcd &= ~0x02, 0x4E); // LCD Write ON
+
+	_delay_ms(100);
+	LCDclear();
+	LCDWriteString("Enter PIN Code:");
+	LCDSetCursorPosition(0, 1);
+}
+
+void LCDclearRow(uint8_t row)
+{
+	LCDSetCursorPosition(0, row - 1);
+	LCDWriteString("                ");
+	LCDSetCursorPosition(0, row - 1);
+}
+
+void LCDclearLastInput(void)
+{
+	LCDsend8Bit(0b00010001, 0);
+	LCDsend8Bit(' ', 1);
+	LCDsend8Bit(0b00010001, 0);
 }
 
 void LCDBackLight(unsigned char mode)

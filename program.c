@@ -3,10 +3,12 @@
 #include "logging.h"
 #include "keypad.h"
 #include "lock.h"
+#include "lcd.h"
 
 void setup()
 {
     loggerInit();
+    LCDInit();
     keypadInit();
     lockInit();
     sei();

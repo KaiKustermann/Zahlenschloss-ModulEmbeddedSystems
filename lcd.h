@@ -8,5 +8,7 @@ void LCDSetCursorPosition(unsigned char, unsigned char);
 void LCDWriteString(char[]);
 void LCDclear(void);
 void LCDBackLight(unsigned char);
+void LCDclearRow(uint8_t);
+void LCDclearLastInput(void);
 
-#endif /* LCD_H_ */
+#endif
