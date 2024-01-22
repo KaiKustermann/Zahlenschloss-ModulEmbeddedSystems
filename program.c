@@ -14,8 +14,13 @@ void setup()
 
 void loop()
 {
-    if(hasKeyChanged() != 0){
-        handleKeyChange(setlockInput);
+    keypadRun();
+    if(hasKeyBeenReleased() != 0){
+        const uint8_t pressedKey = getPressedKey();
+        const uint32_t timeSinceKeyPressed = getTimeSinceKeyPressInit();
+        if(pressedKey != 0){
+            setlockInput((unsigned char)pressedKey, timeSinceKeyPressed);
+        }
     }
     lockRun();
 }
