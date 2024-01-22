@@ -8,6 +8,7 @@
 #include "stringHelpers.h"
 #include "eepromHelpers.h"
 #include "hashing.h"
+#include "lcd.h"
 
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
@@ -129,10 +130,12 @@ uint8_t addDefaultKeypadBehavior(){
     else if (lockKeyInput == DELETE_KEY) {
         strDeleteLastCharacter(pincode);
         logMessage(pincode, INFO);
+        LCDclearLastInput();
     }
     else if (lockKeyInput == CLEAR_KEY) {
         strClear(pincode);
         logMessage(pincode, INFO);
+        LCDclearRow(2);
     }
     else if (lockKeyInput == PRIMARY_KEY && pincodeLength < MIN_PINCODE_LENGTH){
         logMessage("the pincode must contain at least 4 characters", INFO);
@@ -144,6 +147,7 @@ uint8_t addDefaultKeypadBehavior(){
         pincode[pincodeLength] = lockKeyInput;
         pincode[pincodeLength + 1] = '\0';
         logMessage(pincode, INFO);
+        LCDsend8Bit('*', 1);
     }
     else {
         // Return 1 if the input was not handled (error)
@@ -163,7 +167,7 @@ uint8_t isResetSystemInitiated(){
 }
 
 state_t runStateInitial(){
-    logMessage("welcome!", INFO);
+    logMessage("welcome! ", INFO);
     // check if a saved pincode was found in EEPROM memory
     char savedPincode[SAVED_PINCODE_SIZE];
     getSavedPincode(savedPincode);
@@ -175,7 +179,7 @@ state_t runStateInitial(){
 
 state_t runStateTryPincode(){
     if(currentState != previousState){
-        logMessage("enter pincode", INFO);
+        logMessage("enter pincode ", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
     if (addDefaultKeypadBehavior() == 0){
@@ -198,6 +202,9 @@ state_t runStateTryPincode(){
 state_t runStateSetPincodeInitial(){
     if(currentState != previousState){
         logMessage("set a new pincode", INFO);
+        LCDclear();
+        LCDWriteString("Enter new PIN:");
+        LCDSetCursorPosition(0, 1);
     }
     // if the input was handeled by default keypad behavior, return
     if (addDefaultKeypadBehavior() == 0){
@@ -214,7 +221,7 @@ state_t runStateSetPincodeInitial(){
 // substate of state set pincode, which request the user to enter the current pincode
 state_t runStateSetPincodeSubstateEnterCurrent(){
     if(currentState != previousState){
-        logMessage("to set a new pincode, enter the current pincode first", INFO);
+        logMessage("to set a new pincode, enter the current pincode first ", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
     if (addDefaultKeypadBehavior() == 0){
@@ -236,7 +243,7 @@ state_t runStateSetPincodeSubstateEnterCurrent(){
 // substate of state set pincode, which request the user to enter the new pincode
 state_t runStateSetPincodeSubstateEnterNew(){
     if(currentState != previousState){
-        logMessage("set a new pincode", INFO);
+        logMessage("set a new pincode ", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
     if (addDefaultKeypadBehavior() == 0){
@@ -256,7 +263,7 @@ state_t runStateSetPincodeSubstateEnterNew(){
 
 state_t runStateOpen(){
     if(currentState != previousState){
-        logMessage("opening lock", INFO);
+        logMessage("opening lock ", INFO);
         // turn LED on
         PORTB ^= (1 << PB5);
     }
@@ -271,7 +278,7 @@ state_t runStateOpen(){
 
 state_t runStateReset(){
     if(currentState != previousState){
-        logMessage("enter the current pincode to complete reset", INFO);
+        logMessage("enter the current pincode to complete reset ", INFO);
     }
     // if the input was handeled by default keypad behavior, return current state
     if (addDefaultKeypadBehavior() == 0){
