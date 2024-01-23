@@ -194,6 +194,7 @@ state_t runStateTryPincode(){
         if(verifyPincode(pincode) != 0){
             return STATE_OPEN;
         }
+        strClear(pincode);
         return currentState;
     }
     return currentState;
@@ -235,6 +236,7 @@ state_t runStateSetPincodeSubstateEnterCurrent(){
         if(verifyPincode(pincode) != 0){
             return STATE_SET_PIN_CODE_SUBSTATE_ENTER_NEW;
         }
+        strClear(pincode);
         return currentState;
     }
     return currentState;
@@ -291,16 +293,25 @@ state_t runStateReset(){
     // if primary key is pressed, verify entered pincode
     if(lockKeyInput == PRIMARY_KEY){
         if(verifyPincode(pincode) != 0){
+            logMessage("resetting lock...", INFO);
             lockReset();
+            logMessage("reset succeeded!", INFO);
             return STATE_INITIAL;
         }
+        strClear(pincode);
         return currentState;
     }
     return currentState;
 }
 
 state_func_t* const stateTable[NUM_STATES] = {
-    runStateInitial, runStateTryPincode, runStateSetPincodeInitial, runStateSetPincodeSubstateEnterCurrent, runStateSetPincodeSubstateEnterNew, runStateOpen, runStateReset
+    runStateInitial, 
+    runStateTryPincode, 
+    runStateSetPincodeInitial, 
+    runStateSetPincodeSubstateEnterCurrent, 
+    runStateSetPincodeSubstateEnterNew, 
+    runStateOpen, 
+    runStateReset
 };
 
 state_t runState() {

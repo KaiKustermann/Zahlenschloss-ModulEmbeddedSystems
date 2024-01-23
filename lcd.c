@@ -87,7 +87,7 @@ void LCDsend8Bit(unsigned char c, unsigned char mode)
 
 void LCDWriteString(char s[])
 {
-	char n;
+	uint8_t n;
 	for (n = 0; s[n] != '\0'; n++)
 		LCDsend8Bit(s[n], 1);
 }
