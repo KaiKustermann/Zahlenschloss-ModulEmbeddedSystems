@@ -31,7 +31,7 @@ void logLogLevel(LogLevel level){
 void logMessage(char* message, LogLevel level){
     logLogLevel(level);
     usartPutString(message);
-    usartPutString("; ");
+    usartPutString("; \r\n");
 }
 
 void logMessageInt(uint8_t message, LogLevel level){

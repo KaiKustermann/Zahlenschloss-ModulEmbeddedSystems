@@ -3,12 +3,14 @@
 
 void LCDInit(void);
 void LCDsend4Bit(unsigned char);
-void LCDsend8Bit(unsigned char, unsigned char);
+void LCDSend8Bit(unsigned char, unsigned char);
 void LCDSetCursorPosition(unsigned char, unsigned char);
 void LCDWriteString(char[]);
-void LCDclear(void);
+void LCDClear(void);
 void LCDBackLight(unsigned char);
-void LCDclearRow(uint8_t);
-void LCDclearLastInput(void);
+void LCDClearRow(uint8_t);
+void LCDClearLastInput(void);
+void LCDOverwriteStringRowOne(char* message);
+void LCDOverwriteStringRowTwo(char* message);
 
 #endif
