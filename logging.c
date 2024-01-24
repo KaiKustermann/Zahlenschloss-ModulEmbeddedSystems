@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "uart.h"
-#include "enums.h"
+#include "logging.h"
 
 void loggerInit(){
     if(isUsartInitialized() == 0){
