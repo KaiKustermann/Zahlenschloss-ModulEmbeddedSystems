@@ -14,11 +14,9 @@
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
 #define HASHING_SALT_SIZE 8U
-// EEPROM_ADDRESS_PINCODE depends on salt size, as this is also saved to EEPROM
-#define EEPROM_ADDRESS_SAVED_PINCODE (EEPROM_ADDRESS_HASHING_SALT + HASHING_SALT_SIZE)
-#define SAVED_PINCODE_SIZE 10U
-// 15 + null terminator = 16
-#define MAX_PINCODE_LENGTH 15
+#define EEPROM_ADDRESS_SAVED_PINCODE (EEPROM_ADDRESS_HASHING_SALT + HASHING_SALT_SIZE) // depends on salt size, as this is also saved to EEPROM
+#define SAVED_PINCODE_SIZE 10U // the length of the hashed and saved pincode
+#define MAX_PINCODE_LENGTH 16 // 16 + null terminator = 17
 #define MIN_PINCODE_LENGTH 4
 
 #define PRIMARY_KEY 'A'
@@ -27,41 +25,19 @@
 #define DELETE_KEY 'D'
 #define PRESS_DURATION_RESET 4000UL
 
-const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0', '#'};
+#define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
+
+
+const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0', '#'}; // which buttons can be used for entering the pin
 
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
 unsigned char lockKeyInput = ' ';
 uint32_t lockKeyPressDuration = 0;
 
-// is used as temporary state specific variable, cleared on state change
-char pincode[MAX_PINCODE_LENGTH + 1] = "";
+char pincode[MAX_PINCODE_LENGTH + 1] = ""; // is used as temporary state specific variable, cleared on state change
+uint8_t displayedPincodeMasked = 0; // 0 if displayed pincode is not masked, non zero if it is (keeping track for toggle)
 
-// write custom state message to first row of the screen
-void writeStateMessageToScreen(char* stateMessage){
-    LCDOverwriteStringRowOne(stateMessage);
-    LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
-}
-
-// write masked pincode to second row of the screen
-void writePincodeToScreen(char* pincode){
-    size_t lenPincode = strlen(pincode);
-    char maskedPincode[MAX_PINCODE_LENGTH + 1]; // +1 for null terminator
-    for (uint8_t i = 0; i < lenPincode; i++) {
-        maskedPincode[i] = '*';
-    }
-    maskedPincode[lenPincode] = '\0'; 
-    LCDOverwriteStringRowTwo(maskedPincode);
-    LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
-}
-
-// writes help message to second row of the screen, that is there for one second
-void writeHelpMessageToScreen(char* helpMessage){
-    LCDOverwriteStringRowTwo(helpMessage);
-    _delay_ms(1000);
-    writePincodeToScreen(pincode);
-    LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
-}
 
 // takes a char as parameter and checks if it is a pin button (e.g. possible pin value)
 uint8_t isPinButton(unsigned char button){
@@ -74,10 +50,47 @@ uint8_t isPinButton(unsigned char button){
     return 0;
 }
 
+// masks the pincode for displaying it on the screen
+void maskPincode(const char* pincode, char* maskedPincode, size_t lenPincode) {
+    for (uint8_t i = 0; i < lenPincode; i++) {
+        if (i == (lenPincode - 1)) {
+            maskedPincode[i] = pincode[i];
+            break;
+        }
+        maskedPincode[i] = '*';
+    }
+    maskedPincode[lenPincode] = '\0';
+}
+
+// writes masked pincode to second row of the screen
+void writePincodeToScreen(char* pincode){
+    size_t lenPincode = strlen(pincode);
+    char maskedPincode[MAX_PINCODE_LENGTH + 1]; // +1 for null terminator
+    maskPincode(pincode, maskedPincode, lenPincode);
+    LCDOverwriteStringRowTwo(maskedPincode);
+    LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
+}
+
+// writes help message to second row of the screen, that is there for one second
+void writeHelpMessageToScreen(char* helpMessage){
+    LCDOverwriteStringRowTwo(helpMessage);
+    _delay_ms(1000);
+    writePincodeToScreen(pincode);
+    LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
+}
+
+// writes custom state message to first row of the screen
+void writeStateMessageToScreen(char* stateMessage){
+    LCDOverwriteStringRowOne(stateMessage);
+    LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
+}
+
+// saves pin salt to eeprom
 void saveSalt(char* salt){
     eeprom_write_block((const void*)salt, (void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
 }
 
+// retrieves pin salt from eeprom
 void getSavedSalt(char* dest){
     eeprom_read_block((void*)dest, (const void*)EEPROM_ADDRESS_HASHING_SALT, (size_t)HASHING_SALT_SIZE);
 }
@@ -87,7 +100,7 @@ void getSavedPincode(char* dest){
     eeprom_read_block((void*)dest, (const void*)EEPROM_ADDRESS_SAVED_PINCODE, SAVED_PINCODE_SIZE);
 }
 
-// saves pincode to EEPROM and hashes it beforehand
+// saves pincode to EEPROM and hashes it beforehand with random salt
 void savePincode(char* pincode){
     char salt[HASHING_SALT_SIZE];
     generateSalt(salt, sizeof(salt));
@@ -103,16 +116,15 @@ void savePincode(char* pincode){
 
 // returns 1 if the pincode is the same as the saved pincode
 uint8_t verifyPincode(char* pincode){
-    // hashing pincode before comparing
     char salt[HASHING_SALT_SIZE];
     getSavedSalt(salt);
     char hashedPincodeTemp[SAVED_PINCODE_SIZE];
-    hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt);
+    hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt); // hashing pincode with saved salt before comparing
     char savedHashedPincodeTemp[SAVED_PINCODE_SIZE];
     getSavedPincode(savedHashedPincodeTemp);
     logMessage("verifying pincode...", INFO);
     writeHelpMessageToScreen("Verifying...");
-    if (strCmpConstantTime(hashedPincodeTemp, savedHashedPincodeTemp) == 0) {
+    if (strCmpConstantTime(hashedPincodeTemp, savedHashedPincodeTemp) == 0) { // comparing with constant time respective to the saved pincode
         logMessage("pincode is correct!", INFO);
         writeHelpMessageToScreen("Pin correct!");
         return 1;
@@ -123,6 +135,7 @@ uint8_t verifyPincode(char* pincode){
     }
 }
 
+// initializes the lock with default settings
 void lockInit (void) {
     currentState = STATE_INITIAL;
     previousState = STATE_INITIAL;
@@ -134,6 +147,7 @@ void lockInit (void) {
     DDRB |= 1 << PB5; 
 }
 
+// resets the lock to factory state
 void lockReset(){
     logMessage("resetting lock...", INFO);
     writeHelpMessageToScreen("Reset started!");
@@ -147,6 +161,7 @@ void lockReset(){
     writeHelpMessageToScreen("Succeeded!");
 }
 
+// sets the input to the lock
 void setlockInput(unsigned char keyInput, uint32_t keyPressDuration){
     lockKeyInput = keyInput;
     lockKeyPressDuration = keyPressDuration;
