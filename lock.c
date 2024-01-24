@@ -23,12 +23,13 @@
 #define SECONDARY_KEY 'B'
 #define CLEAR_KEY 'C'
 #define DELETE_KEY 'D'
+#define PINCODE_MASK_KEY '*'
 #define PRESS_DURATION_RESET 4000UL
 
 #define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
 
 
-const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','*','0', '#'}; // which buttons can be used for entering the pin
+const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','0', '#'}; // which buttons can be used for entering the pin
 
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
@@ -36,7 +37,7 @@ unsigned char lockKeyInput = ' ';
 uint32_t lockKeyPressDuration = 0;
 
 char pincode[MAX_PINCODE_LENGTH + 1] = ""; // is used as temporary state specific variable, cleared on state change
-uint8_t displayedPincodeMasked = 0; // 0 if displayed pincode is not masked, non zero if it is (keeping track for toggle)
+uint8_t displayedPincodeMasked = 1; // 0 if displayed pincode is not masked, non zero if it is (keeping track for toggle)
 
 
 // takes a char as parameter and checks if it is a pin button (e.g. possible pin value)
@@ -48,6 +49,11 @@ uint8_t isPinButton(unsigned char button){
         }
     }
     return 0;
+}
+
+// returns 0 if displayed pincode is not masked, a non zero value if it is/should be masked
+uint8_t isDisplayedPincodeMasked(){
+    return displayedPincodeMasked;
 }
 
 // masks the pincode for displaying it on the screen
@@ -62,12 +68,16 @@ void maskPincode(const char* pincode, char* maskedPincode, size_t lenPincode) {
     maskedPincode[lenPincode] = '\0';
 }
 
-// writes masked pincode to second row of the screen
+// writes pincode to second row of the screen, determines if it should be masked or not using the current state
 void writePincodeToScreen(char* pincode){
     size_t lenPincode = strlen(pincode);
-    char maskedPincode[MAX_PINCODE_LENGTH + 1]; // +1 for null terminator
-    maskPincode(pincode, maskedPincode, lenPincode);
-    LCDOverwriteStringRowTwo(maskedPincode);
+    char pincodeToDisplay[MAX_PINCODE_LENGTH + 1]; // +1 for null terminator
+    if(isDisplayedPincodeMasked() != 0){ // checks if the pincode should be masked
+        maskPincode(pincode, pincodeToDisplay, lenPincode);
+    } else {
+        strcpy(pincodeToDisplay, pincode);
+    }
+    LCDOverwriteStringRowTwo(pincodeToDisplay);
     LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
 }
 
@@ -141,6 +151,7 @@ void lockInit (void) {
     previousState = STATE_INITIAL;
     lockKeyInput = ' ';
     lockKeyPressDuration = 0;
+    displayedPincodeMasked = 1; // display the pincode as masked by default
     // reset temporary pincode variable that lives as long as a state
     strClear(pincode);
     // set LED pin as output
@@ -198,7 +209,16 @@ uint8_t addDefaultKeypadBehavior(){
     else if (isPinButton(lockKeyInput) && (pincodeLength == MAX_PINCODE_LENGTH)) {
         strClear(pincode);
         logMessage("the maximum length of the pincode is reached", INFO);
-        writeHelpMessageToScreen("Max 15 digits!");
+        writeHelpMessageToScreen("Max 16 digits!");
+    }
+    else if (lockKeyInput == PINCODE_MASK_KEY){
+        if(isDisplayedPincodeMasked() != 0){
+            displayedPincodeMasked = 0;
+        } else {
+            displayedPincodeMasked = 1;
+        }
+        logMessage("pincode mask key pressed", INFO);
+        writePincodeToScreen(pincode);
     }
     else if (isPinButton(lockKeyInput)) {
         pincode[pincodeLength] = lockKeyInput;
