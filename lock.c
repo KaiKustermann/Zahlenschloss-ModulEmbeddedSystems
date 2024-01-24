@@ -24,6 +24,7 @@
 #define CLEAR_KEY 'C'
 #define DELETE_KEY 'D'
 #define PINCODE_MASK_KEY '*'
+#define RESET_KEY '#'
 #define PRESS_DURATION_RESET 4000UL
 
 #define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
@@ -237,7 +238,7 @@ uint8_t addDefaultKeypadBehavior(){
 // checks if the user initiated a system reset
 // returns a non zero value if it is initiated and 0 if no reset is initiated
 uint8_t isResetSystemInitiated(){
-    if(lockKeyInput == CLEAR_KEY && lockKeyPressDuration > PRESS_DURATION_RESET){
+    if(lockKeyInput == RESET_KEY && lockKeyPressDuration > PRESS_DURATION_RESET){
         return 1;
     }
     return 0;
