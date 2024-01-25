@@ -30,7 +30,7 @@
 #define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
 
 
-const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','0', '#'}; // which buttons can be used for entering the pin
+const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','0'}; // which buttons can be used for entering the pin
 
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
@@ -85,7 +85,7 @@ void writePincodeToScreen(char* pincode){
 // writes help message to second row of the screen, that is there for one second
 void writeHelpMessageToScreen(char* helpMessage){
     LCDOverwriteStringRowTwo(helpMessage);
-    _delay_ms(1000);
+    _delay_ms(HELP_MESSAGE_SCREEN_TIME);
     writePincodeToScreen(pincode);
     LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
 }
