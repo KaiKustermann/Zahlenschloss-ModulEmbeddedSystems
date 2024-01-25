@@ -1,3 +1,5 @@
+#include "keypad.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -9,7 +11,7 @@ extern "C"
     typedef struct lock lock_t;
     typedef state_t state_func_t();
     void lockInit (void);
-    void setlockInput(unsigned char keyInput, uint32_t keyPressDuration);
+    void setLockInput(struct keyEvent keyPress);
     void lockRun();
 #endif 
 
