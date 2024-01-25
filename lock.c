@@ -27,6 +27,9 @@
 #define RESET_KEY '#'
 #define PRESS_DURATION_RESET 4000UL
 
+#define LED_PORT DDRD 
+#define LED_PIN DDD2
+
 #define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
 
 
@@ -156,7 +159,7 @@ void lockInit (void) {
     // reset temporary pincode variable that lives as long as a state
     strClear(pincode);
     // set LED pin as output
-    DDRB |= 1 << PB5; 
+    LED_PORT |= (1 << LED_PIN);
 }
 
 // resets the lock to factory state
@@ -164,7 +167,7 @@ void lockReset(){
     logMessage("resetting lock...", INFO);
     writeHelpMessageToScreen("Reset started!");
     // turn off LED if it was on
-    PORTB &= ~(1 << PB5);
+    LED_PORT &= ~(1 << LED_PIN);
     // clear EEPROM
     eepromReset();
     // reinitialize the lock system
@@ -352,12 +355,12 @@ state_t runStateOpen(){
         logMessage("entering state open", INFO);
         writeStateMessageToScreen("Lock Open!");
         // turn LED on
-        PORTB ^= (1 << PB5);
+        LED_PORT ^= (1 << LED_PIN);
     }
     if(lockKeyInput == SECONDARY_KEY){
         writeHelpMessageToScreen("Closing lock!");
         // turn LED off
-        PORTB &= ~(1 << PB5);
+        LED_PORT &= ~(1 << LED_PIN);
         return STATE_TRY_PIN_CODE;
     }
     return currentState;
