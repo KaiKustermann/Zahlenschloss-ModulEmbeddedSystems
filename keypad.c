@@ -34,6 +34,7 @@ uint8_t keypad[4][4] = {{'1','2','3','A'},
 
 uint8_t keyChanged = 0; //flag that is a non zero value if a key has changed and 0 if it has not
 
+// 0 when no key pressed
 uint8_t currentPressedKey = 0;
 
 on_key_changed_function_t* keyPressHandler;
