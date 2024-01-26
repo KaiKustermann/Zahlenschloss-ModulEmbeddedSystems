@@ -93,47 +93,41 @@ void setKeyPressHandler(on_key_changed_function_t* keyPressHandlerFunction){
     keyPressHandler = keyPressHandlerFunction;
 }
 
+// function to send key event to handler
+void sendKeyEvent(keyEventType eventType) {
+    struct keyEvent keyPressEvent;
+    keyPressEvent.pressEventType = eventType;
+    keyPressEvent.pressedKey = (unsigned char)currentPressedKey;
+    keyPressEvent.pressDuration = getMillis();
+    keyPressHandler(keyPressEvent);
+}
+
 void keypadRun(){
-    // handle case where key has changed (has been pressed or released) 
-    if(hasKeyChanged() != 0){
+    // check if the key state has changed
+    if (hasKeyChanged() != 0) {
         uint8_t pressedKey = findPressedKey();
-        // handle case where key has been pressed
-        if(pressedKey != 0){
-            initTimer(); 
+        // handle key press
+        if (pressedKey != 0) {
+            initTimer();
             currentPressedKey = pressedKey;
-            struct keyEvent keyPressEvent;
-            keyPressEvent.pressEventType = KEY_PRESS_START;
-            keyPressEvent.pressedKey = (unsigned char) currentPressedKey;
-            keyPressEvent.pressDuration = getMillis();
-            keyPressHandler(keyPressEvent);
+            sendKeyEvent(KEY_PRESS_START);
         } 
-        // handle case where key has been released
+        // handle key release
         else {
-            struct keyEvent keyPressEvent;
-            keyPressEvent.pressEventType = KEY_PRESS_END;
-            keyPressEvent.pressedKey = (unsigned char) currentPressedKey;
-            keyPressEvent.pressDuration = getMillis();
-            keyPressHandler(keyPressEvent);
-            // set current pressed key to default value (0 when no key pressed)
+            sendKeyEvent(KEY_PRESS_END);
             currentPressedKey = 0;
             resetTimer();
         }
         // reset keyChanged variable
         keyChanged = 0;
     } 
-    // handle case where a key is currently pressed
-    else if (currentPressedKey != 0){
-        struct keyEvent keyPressEvent;
-        keyPressEvent.pressEventType = KEY_HOLD;
-        keyPressEvent.pressedKey = (unsigned char) currentPressedKey;
-        keyPressEvent.pressDuration = getMillis();
-        keyPressHandler(keyPressEvent);
-    }
-    // handle case where no key is currently pressed, released or hold
+    // handle key hold
+    else if (currentPressedKey != 0) {
+        sendKeyEvent(KEY_HOLD);
+    } 
+    // handle no key pressed
     else {
-        struct keyEvent keyPressEvent;
-        keyPressEvent.pressEventType = KEY_NONE;
-        keyPressHandler(keyPressEvent);
+        sendKeyEvent(KEY_NONE);
     }
 }
 
