@@ -34,8 +34,7 @@ const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','0'}; //
 
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
-unsigned char lockKeyInput = ' ';
-uint32_t lockKeyPressDuration = 0;
+struct keyEvent lockInput;
 
 char pincode[MAX_PINCODE_LENGTH + 1] = ""; // is used as temporary state specific variable, cleared on state change
 uint8_t displayedPincodeMasked = 1; // 0 if displayed pincode is not masked, non zero if it is (keeping track for toggle)
@@ -150,8 +149,7 @@ uint8_t verifyPincode(char* pincode){
 void lockInit (void) {
     currentState = STATE_INITIAL;
     previousState = STATE_INITIAL;
-    lockKeyInput = ' ';
-    lockKeyPressDuration = 0;
+    lockInput.pressEventType = KEY_NONE;
     displayedPincodeMasked = 1; // display the pincode as masked by default
     // reset temporary pincode variable that lives as long as a state
     strClear(pincode);
@@ -174,9 +172,8 @@ void lockReset(){
 }
 
 // sets the input to the lock
-void setlockInput(unsigned char keyInput, uint32_t keyPressDuration){
-    lockKeyInput = keyInput;
-    lockKeyPressDuration = keyPressDuration;
+void setLockInput(struct keyEvent keyPressEvent){
+    lockInput = keyPressEvent;
 }
 
 void handleGenericStateChange(){
@@ -190,29 +187,29 @@ void handleGenericStateChange(){
 // returns 0 if the input was handled (succeess) and 1 if the input was not handled (error)
 uint8_t addDefaultKeypadBehavior(){
     size_t pincodeLength = strlen(pincode);
-    if (lockKeyInput == ' ') {
+    if (lockInput.pressEventType == KEY_NONE) {
     }
-    else if (lockKeyInput == DELETE_KEY) {
+    else if (lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == DELETE_KEY) {
         strDeleteLastCharacter(pincode);
         logMessage(pincode, INFO);
         writePincodeToScreen(pincode);
     }
-    else if (lockKeyInput == CLEAR_KEY) {
+    else if (lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == CLEAR_KEY) {
         strClear(pincode);
         logMessage(pincode, INFO);
         writePincodeToScreen(pincode);
     }
-    else if (lockKeyInput == PRIMARY_KEY && pincodeLength < MIN_PINCODE_LENGTH){
+    else if (lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY && pincodeLength < MIN_PINCODE_LENGTH){
         strClear(pincode);
         logMessage("the pincode must contain at least 4 characters", INFO);
         writeHelpMessageToScreen("Min 4 digits!");
     }
-    else if (isPinButton(lockKeyInput) && (pincodeLength == MAX_PINCODE_LENGTH)) {
+    else if (lockInput.pressEventType == KEY_PRESS_START && isPinButton(lockInput.pressedKey) && (pincodeLength == MAX_PINCODE_LENGTH)) {
         strClear(pincode);
         logMessage("the maximum length of the pincode is reached", INFO);
         writeHelpMessageToScreen("Max 16 digits!");
     }
-    else if (lockKeyInput == PINCODE_MASK_KEY){
+    else if (lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PINCODE_MASK_KEY){
         if(isDisplayedPincodeMasked() != 0){
             displayedPincodeMasked = 0;
         } else {
@@ -221,8 +218,8 @@ uint8_t addDefaultKeypadBehavior(){
         logMessage("pincode mask key pressed", INFO);
         writePincodeToScreen(pincode);
     }
-    else if (isPinButton(lockKeyInput)) {
-        pincode[pincodeLength] = lockKeyInput;
+    else if (lockInput.pressEventType == KEY_PRESS_START && isPinButton(lockInput.pressedKey)) {
+        pincode[pincodeLength] = lockInput.pressedKey;
         pincode[pincodeLength + 1] = '\0';
         logMessage(pincode, INFO);
         writePincodeToScreen(pincode);
@@ -232,15 +229,6 @@ uint8_t addDefaultKeypadBehavior(){
         return 1;
     }
     // Return 0 if the input was handled (success)
-    return 0;
-}
-
-// checks if the user initiated a system reset
-// returns a non zero value if it is initiated and 0 if no reset is initiated
-uint8_t isResetSystemInitiated(){
-    if(lockKeyInput == RESET_KEY && lockKeyPressDuration > PRESS_DURATION_RESET){
-        return 1;
-    }
     return 0;
 }
 
@@ -266,7 +254,7 @@ state_t runStateSetPincodeInitial(){
         return currentState;
     }
     // if primary key is pressed, save the pincode in EEPROM
-    if(lockKeyInput == PRIMARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY){
         savePincode(pincode);
         return STATE_TRY_PIN_CODE;
     }
@@ -283,11 +271,11 @@ state_t runStateTryPincode(){
         return currentState;
     }
     // state change to state set pincode
-    if(lockKeyInput == SECONDARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
         return STATE_SET_PIN_CODE_SUBSTATE_ENTER_CURRENT;
     }
     // if primary key is pressed, try to open the lock
-    if(lockKeyInput == PRIMARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY){
         if(verifyPincode(pincode) != 0){
             return STATE_OPEN;
         }
@@ -310,11 +298,11 @@ state_t runStateSetPincodeSubstateEnterCurrent(){
     if (addDefaultKeypadBehavior() == 0){
         return currentState;
     }
-    if(lockKeyInput == SECONDARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
     }
     // if primary key is pressed, enter state set pincode substate set new
-    if(lockKeyInput == PRIMARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY){
         if(verifyPincode(pincode) != 0){
             return STATE_SET_PIN_CODE_SUBSTATE_ENTER_NEW;
         }
@@ -336,11 +324,11 @@ state_t runStateSetPincodeSubstateEnterNew(){
         return currentState;
     }
     // state change to state try pincode
-    if(lockKeyInput == SECONDARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
     }
     // if primary key is pressed, save the pincode in EEPROM
-    if(lockKeyInput == PRIMARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY){
         savePincode(pincode);
         return STATE_TRY_PIN_CODE;
     }
@@ -354,7 +342,7 @@ state_t runStateOpen(){
         // turn LED on
         PORTB ^= (1 << PB5);
     }
-    if(lockKeyInput == SECONDARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
         writeHelpMessageToScreen("Closing lock!");
         // turn LED off
         PORTB &= ~(1 << PB5);
@@ -376,11 +364,11 @@ state_t runStateReset(){
         return currentState;
     }
     // cancel reset if secondary key is pressed
-    if(lockKeyInput == SECONDARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
         return STATE_TRY_PIN_CODE;
     }
     // if primary key is pressed, verify entered pincode
-    if(lockKeyInput == PRIMARY_KEY){
+    if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY){
         if(verifyPincode(pincode) != 0){
             strClear(pincode);
             writeStateMessageToScreen("Resetting...");
@@ -404,22 +392,30 @@ state_func_t* const stateTable[NUM_STATES] = {
     runStateReset
 };
 
-state_t runState() {
-    // system reset should not be available during setup
-    if(currentState != STATE_INITIAL && currentState != STATE_SET_PIN_CODE_INITIAL){
-        if(isResetSystemInitiated() != 0){
-            return STATE_RESET;
+// checks if the user initiated a system reset
+// returns a non zero value if it is initiated and 0 if no reset is initiated
+uint8_t isSystemResetInitiated(){
+    // system reset should not be available during setup and if the lock is already in state reset
+    if(currentState != STATE_INITIAL && currentState != STATE_SET_PIN_CODE_INITIAL && currentState != STATE_RESET){
+        // reset is initiated on key hold of RESET_KEY with a longer press duration than PRESS_DURATION_RESET
+        if(lockInput.pressEventType == KEY_HOLD && lockInput.pressedKey == RESET_KEY && lockInput.pressDuration > PRESS_DURATION_RESET){
+            return 1;
         }
+    }
+    return 0;
+}
+
+state_t runState() {
+    if(isSystemResetInitiated() != 0){
+        return STATE_RESET;
     }
     return stateTable[currentState]();
 };
 
 void lockRun(){
     const state_t previousStateLocal = currentState;
-    currentState = runState(currentState, lockKeyInput, lockKeyPressDuration, previousState);
+    currentState = runState();
     previousState = previousStateLocal;
-    lockKeyInput = ' ';
-    lockKeyPressDuration = 0;
     if(previousState != currentState){
         handleGenericStateChange();
     }

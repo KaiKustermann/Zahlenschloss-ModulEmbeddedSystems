@@ -34,13 +34,10 @@ uint8_t keypad[4][4] = {{'1','2','3','A'},
 
 uint8_t keyChanged = 0; //flag that is a non zero value if a key has changed and 0 if it has not
 
-uint8_t keyHasBeenReleased = 0; //flag that is a non zero value if a key has been released and 0 if it has not
+// 0 when no key pressed
+uint8_t currentPressedKey = 0;
 
-uint8_t lastPressedKey = 0;
-
-uint32_t startTimeKeyPress = 0;
-
-uint32_t timeSinceKeyPressInit = 0;
+on_key_changed_function_t* keyPressHandler;
 
 // using column scanning technique (columns as input to the microcontroller); 
 // detailed: going through the rows (outputs to microcontroller) and applying ground (0) to each row. Then reading the columns (inputs to microcontroller). If the column is 0, the button in this row for this column was pressed.
@@ -92,36 +89,45 @@ uint8_t hasKeyChanged(){
     return keyChanged;
 }
 
-uint8_t hasKeyBeenReleased(){
-    return keyHasBeenReleased;
+void setKeyPressHandler(on_key_changed_function_t* keyPressHandlerFunction){
+    keyPressHandler = keyPressHandlerFunction;
 }
 
-uint8_t getPressedKey(){
-    return lastPressedKey;
-}
-
-uint32_t getTimeSinceKeyPressInit(){
-    return timeSinceKeyPressInit;
+// function to send key event to handler
+void sendKeyEvent(keyEventType eventType) {
+    struct keyEvent keyPressEvent;
+    keyPressEvent.pressEventType = eventType;
+    keyPressEvent.pressedKey = (unsigned char)currentPressedKey;
+    keyPressEvent.pressDuration = getMillis();
+    keyPressHandler(keyPressEvent);
 }
 
 void keypadRun(){
-    keyHasBeenReleased = 0;
-    // check if key has been pressed or released
-    if(hasKeyChanged() != 0){
-        uint8_t pressedKeyLocal = findPressedKey();
-        // handle case where key has been pressed
-        if(pressedKeyLocal != 0){
-            initTimer(); 
-            lastPressedKey = pressedKeyLocal;
+    // check if the key state has changed
+    if (hasKeyChanged() != 0) {
+        uint8_t pressedKey = findPressedKey();
+        // handle key press
+        if (pressedKey != 0) {
+            initTimer();
+            currentPressedKey = pressedKey;
+            sendKeyEvent(KEY_PRESS_START);
         } 
-        // handle case where key has been released
+        // handle key release
         else {
-            timeSinceKeyPressInit = getMillis();
-            keyHasBeenReleased = 1;
+            sendKeyEvent(KEY_PRESS_END);
+            currentPressedKey = 0;
             resetTimer();
         }
         // reset keyChanged variable
         keyChanged = 0;
+    } 
+    // handle key hold
+    else if (currentPressedKey != 0) {
+        sendKeyEvent(KEY_HOLD);
+    } 
+    // handle no key pressed
+    else {
+        sendKeyEvent(KEY_NONE);
     }
 }
 
