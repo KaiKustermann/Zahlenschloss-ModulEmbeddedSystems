@@ -168,7 +168,6 @@ void lockInit (void) {
     strClear(pincode);
     // set LED pin as output
     LED_DDR |= (1 << LED_GREEN) | (1 << LED_RED); // Set PIND4 and PIND5 as output
-    init_speaker_pin();
 }
 
 // resets the lock to factory state
