@@ -11,7 +11,6 @@
 #include "eepromHelpers.h"
 #include "hashing.h"
 #include "lcd.h"
-#include "buzzer.h"
 
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
