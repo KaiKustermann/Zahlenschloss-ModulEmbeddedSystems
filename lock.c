@@ -3,6 +3,7 @@
 #include <avr/eeprom.h>
 #include <string.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 
 #include "logging.h"
 #include "lock.h"
@@ -10,6 +11,7 @@
 #include "eepromHelpers.h"
 #include "hashing.h"
 #include "lcd.h"
+#include "buzzer.h"
 
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
@@ -27,8 +29,10 @@
 #define RESET_KEY '#'
 #define PRESS_DURATION_RESET 4000UL
 
-#define LED_PORT DDRD 
-#define LED_PIN DDD2
+#define LED_GREEN PD2
+#define LED_RED PD3
+#define LED_DDR DDRD
+#define LED_PORT PORTD
 
 #define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
 
@@ -144,7 +148,12 @@ uint8_t verifyPincode(char* pincode){
         return 1;
     } else {
         logMessage("pincode is incorrect!", INFO);
+        // blink red LED once
+        LED_PORT |= (1 << LED_RED); // turn on red LED
         writeHelpMessageToScreen("Pin incorrect!");
+        //playTone();
+        _delay_ms(500); // wait for 200 milliseconds
+        LED_PORT &= ~(1 << LED_RED); // turn off red LED
         return 0;
     }
 }
@@ -159,7 +168,8 @@ void lockInit (void) {
     // reset temporary pincode variable that lives as long as a state
     strClear(pincode);
     // set LED pin as output
-    LED_PORT |= (1 << LED_PIN);
+    LED_DDR |= (1 << LED_GREEN) | (1 << LED_RED); // Set PIND4 and PIND5 as output
+    init_speaker_pin();
 }
 
 // resets the lock to factory state
@@ -167,7 +177,7 @@ void lockReset(){
     logMessage("resetting lock...", INFO);
     writeHelpMessageToScreen("Reset started!");
     // turn off LED if it was on
-    LED_PORT &= ~(1 << LED_PIN);
+    LED_PORT &= ~((1 << LED_GREEN) | (1 << LED_RED));
     // clear EEPROM
     eepromReset();
     // reinitialize the lock system
@@ -355,12 +365,12 @@ state_t runStateOpen(){
         logMessage("entering state open", INFO);
         writeStateMessageToScreen("Lock Open!");
         // turn LED on
-        LED_PORT ^= (1 << LED_PIN);
+        LED_PORT |= (1<< LED_GREEN);
     }
     if(lockKeyInput == SECONDARY_KEY){
         writeHelpMessageToScreen("Closing lock!");
         // turn LED off
-        LED_PORT &= ~(1 << LED_PIN);
+        LED_PORT &= ~(1 << LED_GREEN);
         return STATE_TRY_PIN_CODE;
     }
     return currentState;
