@@ -12,7 +12,7 @@ extern "C"
             WARNING,
             ERROR
         } LogLevel;
-    void loggerInit();
+    void loggingInit();
     void logMessage(char* message, LogLevel level);
     void logMessageInt(uint8_t message, LogLevel level);
     void logMessageChar(unsigned char message, LogLevel level);
