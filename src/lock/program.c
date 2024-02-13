@@ -1,10 +1,10 @@
 #include <avr/interrupt.h>
 
-#include "logging.h"
-#include "keypad.h"
+#include "../logging/logging.h"
+#include "../drivers/keypad.h"
 #include "lock.h"
-#include "lcd.h"
-#include "configuration.h"
+#include "../drivers/lcd.h"
+#include "../configuration.h"
 
 void setup()
 {

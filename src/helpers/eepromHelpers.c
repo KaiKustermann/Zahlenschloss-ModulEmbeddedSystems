@@ -1,7 +1,6 @@
 #include <avr/eeprom.h>
 
 #include "eepromHelpers.h"
-#include "logging.h"
 
 // Function to reset EEPROM to initial values
 void eepromReset() {

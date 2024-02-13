@@ -1,5 +1,5 @@
-#include "program.h"
-#include "eepromHelpers.h"
+#include "./lock/program.h"
+#include "./helpers/eepromHelpers.h"
 
 int main()
 {

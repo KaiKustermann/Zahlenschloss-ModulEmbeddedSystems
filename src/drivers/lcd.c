@@ -3,7 +3,7 @@
 
 #include "lcd.h"
 #include "i2c.h"
-#include "logging.h"
+#include "../logging/logging.h"
 
 unsigned char portlcd = 0;
 

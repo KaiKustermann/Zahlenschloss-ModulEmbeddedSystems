@@ -5,13 +5,13 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-#include "logging.h"
+#include "../logging/logging.h"
 #include "lock.h"
-#include "stringHelpers.h"
-#include "eepromHelpers.h"
+#include "../helpers/stringHelpers.h"
+#include "../helpers/eepromHelpers.h"
 #include "hashing.h"
-#include "lcd.h"
-#include "buzzer.h"
+#include "../drivers/lcd.h"
+#include "../drivers/buzzer.h"
 
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
