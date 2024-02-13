@@ -11,6 +11,7 @@
 #include "eepromHelpers.h"
 #include "hashing.h"
 #include "lcd.h"
+#include "buzzer.h"
 
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
@@ -88,10 +89,18 @@ void writePincodeToScreen(char* pincode){
 }
 
 // writes help message to second row of the screen, that is there for one second
-void writeHelpMessageToScreen(char* helpMessage){
+void writeHelpMessageToScreen(char* helpMessage, int playTone){
     LCDOverwriteStringRowTwo(helpMessage);
-    _delay_ms(HELP_MESSAGE_SCREEN_TIME);
-    writePincodeToScreen(pincode);
+    if(playTone == 0) {
+        _delay_ms(HELP_MESSAGE_SCREEN_TIME);
+    } else if(playTone == 1){
+        playToneHigh();
+        _delay_ms(100);
+        playToneHigher();
+    } else if(playTone == 2){
+        playToneLow();
+    } 
+    //writePincodeToScreen(pincode);
     LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
 }
 
@@ -123,11 +132,11 @@ void savePincode(char* pincode){
     char hashedPincodeTemp[SAVED_PINCODE_SIZE];
     hashPincode(pincode, hashedPincodeTemp, sizeof(hashedPincodeTemp), salt);
     logMessage("saving pincode...", INFO);
-    writeHelpMessageToScreen("Saving...");
+    writeHelpMessageToScreen("Saving...", 0);
     saveSalt(salt);
     eeprom_write_block((const void*)hashedPincodeTemp, (void*)EEPROM_ADDRESS_SAVED_PINCODE, sizeof(hashedPincodeTemp));
     logMessage("pincode saved!", INFO);
-    writeHelpMessageToScreen("Saved!");
+    writeHelpMessageToScreen("Saved!", 0);
 }
 
 // returns 1 if the pincode is the same as the saved pincode
@@ -139,16 +148,16 @@ uint8_t verifyPincode(char* pincode){
     char savedHashedPincodeTemp[SAVED_PINCODE_SIZE];
     getSavedPincode(savedHashedPincodeTemp);
     logMessage("verifying pincode...", INFO);
-    writeHelpMessageToScreen("Verifying...");
+    writeHelpMessageToScreen("Verifying...", 0);
     if (strCmpConstantTime(hashedPincodeTemp, savedHashedPincodeTemp) == 0) { // comparing with constant time respective to the saved pincode
         logMessage("pincode is correct!", INFO);
-        writeHelpMessageToScreen("Pin correct!");
+        writeHelpMessageToScreen("Pin correct!", 1);
         return 1;
     } else {
         logMessage("pincode is incorrect!", INFO);
         // blink red LED once
         LED_PORT |= (1 << LED_RED); // turn on red LED
-        writeHelpMessageToScreen("Pin incorrect!");
+        writeHelpMessageToScreen("Pin incorrect!", 2);
         //playTone();
         _delay_ms(500); // wait for 200 milliseconds
         LED_PORT &= ~(1 << LED_RED); // turn off red LED
@@ -166,12 +175,13 @@ void lockInit (void) {
     strClear(pincode);
     // set LED pin as output
     LED_DDR |= (1 << LED_GREEN) | (1 << LED_RED); // Set PIND4 and PIND5 as output
+    init_speaker();
 }
 
 // resets the lock to factory state
 void lockReset(){
     logMessage("resetting lock...", INFO);
-    writeHelpMessageToScreen("Reset started!");
+    writeHelpMessageToScreen("Reset started!", 0);
     // turn off LED if it was on
     LED_PORT &= ~((1 << LED_GREEN) | (1 << LED_RED));
     // clear EEPROM
@@ -179,7 +189,7 @@ void lockReset(){
     // reinitialize the lock system
     lockInit();
     logMessage("reset succeeded!", INFO);
-    writeHelpMessageToScreen("Succeeded!");
+    writeHelpMessageToScreen("Succeeded!", 0);
 }
 
 // sets the input to the lock
@@ -213,12 +223,12 @@ uint8_t addDefaultKeypadBehavior(){
     else if (lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PRIMARY_KEY && pincodeLength < MIN_PINCODE_LENGTH){
         strClear(pincode);
         logMessage("the pincode must contain at least 4 characters", INFO);
-        writeHelpMessageToScreen("Min 4 digits!");
+        writeHelpMessageToScreen("Min 4 digits!", 0);
     }
     else if (lockInput.pressEventType == KEY_PRESS_START && isPinButton(lockInput.pressedKey) && (pincodeLength == MAX_PINCODE_LENGTH)) {
         strClear(pincode);
         logMessage("the maximum length of the pincode is reached", INFO);
-        writeHelpMessageToScreen("Max 16 digits!");
+        writeHelpMessageToScreen("Max 16 digits!", 0);
     }
     else if (lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == PINCODE_MASK_KEY){
         if(isDisplayedPincodeMasked() != 0){
@@ -230,6 +240,7 @@ uint8_t addDefaultKeypadBehavior(){
         writePincodeToScreen(pincode);
     }
     else if (lockInput.pressEventType == KEY_PRESS_START && isPinButton(lockInput.pressedKey)) {
+        playToneHigh();
         pincode[pincodeLength] = lockInput.pressedKey;
         pincode[pincodeLength + 1] = '\0';
         logMessage(pincode, INFO);
@@ -354,7 +365,7 @@ state_t runStateOpen(){
         LED_PORT |= (1<< LED_GREEN);
     }
     if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
-        writeHelpMessageToScreen("Closing lock!");
+        writeHelpMessageToScreen("Closing lock!", 0);
         // turn LED off
         LED_PORT &= ~(1 << LED_GREEN);
         return STATE_TRY_PIN_CODE;
