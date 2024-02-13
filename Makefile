@@ -13,8 +13,8 @@ endif
 
 
 TARGET=main
-C_SOURCES=$(wildcard *.c)
-CPP_SOURCES=$(wildcard *.cpp)
+C_SOURCES=$(wildcard *.c) $(wildcard */*.c) $(wildcard */*/*.c)
+CPP_SOURCES=$(wildcard *.cpp) $(wildcard */*.cpp) $(wildcard */*/*.cpp)
 O_FILES=$(patsubst %.c,%.o,$(C_SOURCES))
 O_FILES+=$(patsubst %.cpp,%.o,$(CPP_SOURCES))
 

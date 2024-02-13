@@ -4,9 +4,7 @@
 #include <stdio.h>
 
 #include "keypad.h"
-#include "logging.h"
-#include "uart.h"
-#include "timerHelpers.h"
+#include "../helpers/timerHelpers.h"
 
 #define DDR_KEYPAD_ROWS DDRD
 #define DDR_KEYPAD_COLS DDRB
