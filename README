@@ -1,3 +1,21 @@
+# Documentation Project Zahlenschloss 
+## 1. Contributors
+- Kai Kustermann (kk147)
+- Hannes Frey (hf018)
+## 2. Description
+The project implements a safe using an ATmega328P as microcontroller, a 4x4 matrix keypad to capture user input and an LCD display as output to display important information about the state of the system. Two LEDs are used to indicate if the safe is open or closed. A DC locking bolt acts as mechanic mechanism for closing and opening the lock, which operates using a mosfet. Optionally a buzzer can be added to give auditory feedback to the user.
+
+(TODO: Hier bild von safe einfügen)
+## 3. Setup
+### 3.1. Hardware 
+#### 3.1.1 Circuit Diagram
+#### 3.1.2 Chassis and 3D Printing
+### 3.2. Software
+
+## 4. Deployment
+## 5. Code Structure
+## 6. Operation Manuals
+
 1. Download avr-gcc  and avrdude
 
 2. Adjust c_cpp_properties.json vs code settings
