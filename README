@@ -73,5 +73,22 @@ For Windows, the default programmer port is set to COM3, for Linux it is set to 
 ### Build and Deployment Steps in Makefile
 The build step, which is defined in the Makefile uses the AVR-GCC compiler to compile and link the project. It automatically converts all C and C++ files to object files and then transforms them into linked .elf files. After that, the command `avr-objcopy` is used to create .hex files, which contain machine language code in hexidecimal form. AVRDUDE is used to write the .hex file to the flash memory of the microcontroller.
 ## 6. Code
+
 ## 7. Operation Manual
+The safe is controlled via keypad and gives feedback on an LCD display. The safe can be in 5 different states with different behaviors and functions.
+### Keypad
+The core keypad functions are the same in each state. The keypad has 10 blue number keys, which can be used for the pin code and 6 red symbol keys, which have different functions:
+
+![Keypad](./assets/keypad.png)
+### Display
+The display gives feedback regarding the state of the system as well as the given pin code and additional temporary help messages. 
+
+![Display](./assets/display.png)
+### States
+1. Setting the initial pin code:
+When first turning on the safe, you will be prompted to set a new pin code.
+2. Entering the pin code: When a pincode is set, you are prompted to enter the current pin code to open the lock. When pressing B in this state, the safe will enter state 4.
+3. Opening the lock: When the right pin code was entered, the lock opens. When pressing B in this state, the safe will enter state 2.
+4. Setting a new pin code: This state asks for the set pincode first. If the given pin code is right, it will let you set a new pin code. When pressing B in this state, the safe will enter state 2.
+5. Resetting to factory settings: When holding the key # for 4 seconds, the safe will reset to factory settings.
 ## 8. Credits and Sources
