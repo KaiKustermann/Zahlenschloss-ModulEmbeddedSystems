@@ -62,7 +62,16 @@ VSCode can give a nice development experience by providing helpful features like
     "version": 4
 }
 ```
-## 5. Deployment
+## 5. Build and Deployment
+First, configure the program to your needs in main.c. An important setting is the environment setting (DEV or PROD), which disables logging in PROD for performance gains.   
+The build and deployment process is automated with a Makefile. It provides the following commands:  
+- To flash the project onto an ATmega328P microcontroller, use the command:   
+`make program`  
+For Windows, the default programmer port is set to COM3, for Linux it is set to /dev/ttyUSB0. Make sure to connect the ATmega328P to the right USB port or change the setting.
+- To remove the generated .hex, .elf and .o files from your development machine, use the command:    
+`make clean`  
+### Build and Deployment Steps in Makefile
+The build step, which is defined in the Makefile uses the AVR-GCC compiler to compile and link the project. It automatically converts all C and C++ files to object files and then transforms them into linked .elf files. After that, the command `avr-objcopy` is used to create .hex files, which contain machine language code in hexidecimal form. AVRDUDE is used to write the .hex file to the flash memory of the microcontroller.
 ## 6. Code
 ## 7. Operation Manual
 ## 8. Credits and Sources
