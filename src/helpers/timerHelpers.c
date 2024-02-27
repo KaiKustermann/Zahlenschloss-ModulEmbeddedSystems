@@ -4,12 +4,13 @@
 
 #include "timerHelpers.h"
 
-// compare match interrupt gets fired every ms 
+// compare match interrupt gets fired every millisecond 
 ISR(TIMER1_COMPA_vect)
 {
     timerMillis++;
 }
 
+// starts the timer using timer1
 void initTimer()
 {
     unsigned long CTCMatchOverflow = ((F_CPU / 1000) / 8); //when timer1 is this value, 1ms has passed (with 8 bit prescaler)
@@ -25,6 +26,7 @@ void initTimer()
     TIMSK1 |= (1 << OCIE1A);
 }
 
+// resets the timer
 void resetTimer() {
     // clear the timer control register to stop the timer
     TCCR1B &= ~(1 << CS11);
@@ -36,6 +38,7 @@ void resetTimer() {
     timerMillis = 0;
 }
 
+// returns the milliseconds passed since the timer was started using initTimer()
 unsigned long getMillis (void)
 {
     unsigned long millisReturn;

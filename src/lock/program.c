@@ -8,11 +8,14 @@
 
 void setup()
 {
+    // activate logging, if the system is running in a development environment
+    // for production, logging is disabled
     if(ENVIRONMENT == DEV){
         loggingInit();
     }
     LCDInit();
     keypadInit();
+    // setting the callback function to setLockInput
     setKeyPressHandler(setLockInput);
     lockInit();
     sei();

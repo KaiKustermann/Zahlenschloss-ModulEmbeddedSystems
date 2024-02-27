@@ -101,7 +101,7 @@ void sendKeyEvent(keyEventType eventType) {
 }
 
 void keypadRun(){
-    // check if the key state has changed
+    // check if the key state has changed (flag has been set by interrupt)
     if (hasKeyChanged() != 0) {
         uint8_t pressedKey = findPressedKey();
         // handle key press

@@ -70,10 +70,45 @@ The build and deployment process is automated with a Makefile. It provides the f
 For Windows, the default programmer port is set to COM3, for Linux it is set to /dev/ttyUSB0. Make sure to connect the ATmega328P to the right USB port or change the setting.
 - To remove the generated .hex, .elf and .o files from your development machine, use the command:    
 `make clean`  
-### Build and Deployment Steps in Makefile
+### Makefile
 The build step, which is defined in the Makefile uses the AVR-GCC compiler to compile and link the project. It automatically converts all C and C++ files to object files and then transforms them into linked .elf files. After that, the command `avr-objcopy` is used to create .hex files, which contain machine language code in hexidecimal form. AVRDUDE is used to write the .hex file to the flash memory of the microcontroller.
 ## 6. Code
-
+The code is structured like follows:
+```bash
+├── main.c
+├── configuration.h
+├── drivers
+│  ├── buzzer.c
+│   ├── buzzer.h
+│   ├── i2c.c
+│   ├── i2c.h
+│   ├── keypad.c
+│   ├── keypad.h
+│   ├── lcd.c
+│   └── lcd.h
+├── helpers
+│   ├── eepromHelpers.c
+│   ├── eepromHelpers.h
+│   ├── stringHelpers.c
+│   ├── stringHelpers.h
+│   ├── timerHelpers.c
+│   └── timerHelpers.h
+├── lock
+│   ├── hashing.c
+│   ├── hashing.h
+│   ├── lock.c
+│   ├── lock.h
+│   ├── program.c
+│   └── program.h
+├── logging
+    ├── logging.c
+    ├── logging.h
+    ├── uart.c
+    └── uart.h
+```
+The main logic of the program can be found lock.c in the lock folder, including the state machine of the lock. Several helpers, as well as drivers are used in the application, of which keypad.c and lcd.c are the most important ones, as they represent the drivers for the I/O hardware.
+The lock can be configured in main.c.   
+For more information about the code and specific functions, please refer to the code comments.
 ## 7. Operation Manual
 The safe is controlled via keypad and gives feedback on an LCD display. The safe can be in 5 different states with different behaviors and functions.
 ### Keypad
@@ -85,10 +120,10 @@ The display gives feedback regarding the state of the system as well as the give
 
 ![Display](./assets/display.png)
 ### States
-1. Setting the initial pin code:
+1. **Setting the initial pin code**:
 When first turning on the safe, you will be prompted to set a new pin code.
-2. Entering the pin code: When a pincode is set, you are prompted to enter the current pin code to open the lock. When pressing B in this state, the safe will enter state 4.
-3. Opening the lock: When the right pin code was entered, the lock opens. When pressing B in this state, the safe will enter state 2.
-4. Setting a new pin code: This state asks for the set pincode first. If the given pin code is right, it will let you set a new pin code. When pressing B in this state, the safe will enter state 2.
-5. Resetting to factory settings: When holding the key # for 4 seconds, the safe will reset to factory settings.
+2. **Entering the pin code**: When a pin code is set, you are prompted to enter the currently set pin code to open the lock. When pressing B in this state, the safe will enter state 4.
+3. **Opening the lock**: When the right pin code was entered, the lock opens. When pressing B in this state, the safe will enter state 2.
+4. **Setting a new pin code**: This state asks for the set pin code first. If the given pin code is right, it will let you set a new pin code. When pressing B in this state, the safe will enter state 2.
+5. **Resetting to factory settings**: When holding the key # in any state for 4 seconds, the safe will enter the reset state. Here, you are prompted to enter the currently set pin code. If the correct pin code is entered, the lock will reset itself to factory settings.
 ## 8. Credits and Sources

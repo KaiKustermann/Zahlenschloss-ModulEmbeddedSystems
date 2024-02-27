@@ -7,13 +7,16 @@
 
 uint8_t loggingInitialized = 0;
 
+// initialized logging via usart
 void loggingInit(){
+    // initialize usart for logging, if it is not initialized already
     if(isUsartInitialized() == 0){
         usartInit();
     }
     loggingInitialized = 1;
 }
 
+// helper function to log the log level
 void logLogLevel(LogLevel level){
     if(loggingInitialized){
         switch (level) {
@@ -33,6 +36,7 @@ void logLogLevel(LogLevel level){
     }
 }
 
+// logs a char* message
 void logMessage(char* message, LogLevel level){
     if(loggingInitialized){
         logLogLevel(level);
@@ -41,6 +45,7 @@ void logMessage(char* message, LogLevel level){
     }
 }
 
+// logs a uint8_t message
 void logMessageInt(uint8_t message, LogLevel level){
     if(loggingInitialized){
         char str[4];
@@ -49,6 +54,7 @@ void logMessageInt(uint8_t message, LogLevel level){
     }
 }
 
+// logs a unsigned char message
 void logMessageChar(unsigned char message, LogLevel level){
     if(loggingInitialized){
         logLogLevel(level);
@@ -57,6 +63,7 @@ void logMessageChar(unsigned char message, LogLevel level){
     }
 }
 
+// logs uint32_t message 
 void logMessageUInt32(uint32_t message, LogLevel level) {
     if(loggingInitialized){
         char str[12];

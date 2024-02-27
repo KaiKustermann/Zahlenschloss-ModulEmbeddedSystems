@@ -5,7 +5,7 @@
 
 #include "hashing.h"
 
-// djb2 hashing function
+// hashing function using DJB2 as algorithm
 uint32_t hashDJB2(const char *str) {
     uint32_t hash = 5381;
     uint8_t c;
@@ -17,7 +17,7 @@ uint32_t hashDJB2(const char *str) {
     return hash;
 }
 
-// generate a random salt with chars ranging from uppercase A to Z with given salt size 
+// generates a random salt with chars ranging from uppercase A to Z with given salt size 
 void generateSalt(char *salt, size_t saltSize) {
     for (size_t i = 0; i < saltSize - 1; ++i) {
         // the result of rand() % 26 is added to the ASCII value of the uppercase letter A
@@ -28,7 +28,7 @@ void generateSalt(char *salt, size_t saltSize) {
     salt[saltSize - 1] = '\0'; 
 }
 
-// hash the pincode with salt
+// hashes the pincode with salt
 void hashPincode(char *pincode, char *hashedPincode, size_t hashedPincodeSize, char* salt) {
     // the format specifier %08lx pads the returned string with leading zeros, if the string is less than 8 hexadecimal values long
     snprintf(hashedPincode, hashedPincodeSize, "%08lx", hashDJB2(pincode) ^ hashDJB2(salt));

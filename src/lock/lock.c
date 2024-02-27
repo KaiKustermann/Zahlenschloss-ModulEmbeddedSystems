@@ -15,11 +15,11 @@
 
 
 #define EEPROM_ADDRESS_HASHING_SALT 0x00
-#define HASHING_SALT_SIZE 8U
+#define HASHING_SALT_SIZE 8U // size of the salt, which the pin code is hashed with
 #define EEPROM_ADDRESS_SAVED_PINCODE (EEPROM_ADDRESS_HASHING_SALT + HASHING_SALT_SIZE) // depends on salt size, as this is also saved to EEPROM
 #define SAVED_PINCODE_SIZE 10U // the length of the hashed and saved pincode
-#define MAX_PINCODE_LENGTH 16 // 16 + null terminator = 17
-#define MIN_PINCODE_LENGTH 4
+#define MAX_PINCODE_LENGTH 16 // maximum length of the saveable pin code
+#define MIN_PINCODE_LENGTH 4 // maximum length of the saveable pin code
 
 #define PRIMARY_KEY 'A'
 #define SECONDARY_KEY 'B'
@@ -27,23 +27,23 @@
 #define DELETE_KEY 'D'
 #define PINCODE_MASK_KEY '*'
 #define RESET_KEY '#'
-#define PRESS_DURATION_RESET 4000UL
+#define PRESS_DURATION_RESET 4000UL // how long the reset button should be pressed for a reset to be initialized
 
 #define LED_GREEN PD2
 #define LED_RED PD3
 #define LED_DDR DDRD
 #define LED_PORT PORTD
 
-#define HELP_MESSAGE_SCREEN_TIME 1000 // how many ms messages of type help message are displayed on the screen
+#define HELP_MESSAGE_SCREEN_TIME 1000 // how many milliseconds messages of type help message are displayed on the screen
 
 
 const unsigned char pinButtons[] = {'1','2','3','4','5','6','7','8','9','0'}; // which buttons can be used for entering the pin
 
 state_t currentState = STATE_INITIAL;
 state_t previousState = STATE_INITIAL;
-struct keyEvent lockInput;
+struct keyEvent lockInput; 
 
-char pincode[MAX_PINCODE_LENGTH + 1] = ""; // is used as temporary state specific variable, cleared on state change
+char pincode[MAX_PINCODE_LENGTH + 1] = ""; // is used as temporary state specific variable, cleared on state change (represents the displayed pin)
 uint8_t displayedPincodeMasked = 1; // 0 if displayed pincode is not masked, non zero if it is (keeping track for toggle)
 
 
@@ -58,12 +58,12 @@ uint8_t isPinButton(unsigned char button){
     return 0;
 }
 
-// returns 0 if displayed pincode is not masked, a non zero value if it is/should be masked
+// returns 0 if displayed pincode is not masked, a non zero value if it is masked
 uint8_t isDisplayedPincodeMasked(){
     return displayedPincodeMasked;
 }
 
-// masks the pincode for displaying it on the screen
+// masks the pincode for displaying it on the screen (masks the first chars with asterisk chars, e.g. 1234 -> ***4)
 void maskPincode(const char* pincode, char* maskedPincode, size_t lenPincode) {
     for (uint8_t i = 0; i < lenPincode; i++) {
         if (i == (lenPincode - 1)) {
@@ -75,7 +75,7 @@ void maskPincode(const char* pincode, char* maskedPincode, size_t lenPincode) {
     maskedPincode[lenPincode] = '\0';
 }
 
-// writes pincode to second row of the screen, determines if it should be masked or not using the current state
+// writes the pincode to the second row of the screen, determines if it should be masked or not using the current user setting
 void writePincodeToScreen(char* pincode){
     size_t lenPincode = strlen(pincode);
     char pincodeToDisplay[MAX_PINCODE_LENGTH + 1]; // +1 for null terminator
@@ -88,7 +88,8 @@ void writePincodeToScreen(char* pincode){
     LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
 }
 
-// writes help message to second row of the screen, that is there for one second
+// writes a given help message to the second row of the screen, which is displayed for one second
+// takes playTone as second argument, where 0 = no tone, 1 = high tone, 2 = low tone
 void writeHelpMessageToScreen(char* helpMessage, int playTone){
     LCDOverwriteStringRowTwo(helpMessage);
     if(playTone == 0) {
@@ -99,12 +100,11 @@ void writeHelpMessageToScreen(char* helpMessage, int playTone){
         playToneHigher();
     } else if(playTone == 2){
         playToneLow();
-    } 
-    //writePincodeToScreen(pincode);
+    }
     LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
 }
 
-// writes custom state message to first row of the screen
+// writes the given message to first row of the screen, which should give information about the current state of the system
 void writeStateMessageToScreen(char* stateMessage){
     LCDOverwriteStringRowOne(stateMessage);
     LCDSetCursorPosition((unsigned char)strlen(pincode), 1);
@@ -125,7 +125,7 @@ void getSavedPincode(char* dest){
     eeprom_read_block((void*)dest, (const void*)EEPROM_ADDRESS_SAVED_PINCODE, SAVED_PINCODE_SIZE);
 }
 
-// saves pincode to EEPROM and hashes it beforehand with random salt
+// saves pincode to EEPROM and hashes it beforehand with random salt, displays help messages to inform the user
 void savePincode(char* pincode){
     char salt[HASHING_SALT_SIZE];
     generateSalt(salt, sizeof(salt));
@@ -139,7 +139,7 @@ void savePincode(char* pincode){
     writeHelpMessageToScreen("Saved!", 0);
 }
 
-// returns 1 if the pincode is the same as the saved pincode
+// returns 1 if the pincode is the same as the currently set pincode, otherwise returns 0
 uint8_t verifyPincode(char* pincode){
     char salt[HASHING_SALT_SIZE];
     getSavedSalt(salt);
@@ -178,7 +178,7 @@ void lockInit (void) {
     init_speaker();
 }
 
-// resets the lock to factory state
+// resets the lock to factory settings
 void lockReset(){
     logMessage("resetting lock...", INFO);
     writeHelpMessageToScreen("Reset started!", 0);
@@ -192,11 +192,12 @@ void lockReset(){
     writeHelpMessageToScreen("Succeeded!", 0);
 }
 
-// sets the input to the lock
+// sets the input of the lock
 void setLockInput(struct keyEvent keyPressEvent){
     lockInput = keyPressEvent;
 }
 
+// handles a state change by clearing the pincode variable
 void handleGenericStateChange(){
     // clear pincode variable bewteen state changes because it is state specific
     strClear(pincode);
@@ -204,9 +205,9 @@ void handleGenericStateChange(){
     writePincodeToScreen(pincode);
 }
 
-// adds non state specific behavior to the keypad
-// returns 0 if the input was handled (succeess) and 1 if the input was not handled (error)
-uint8_t addDefaultKeypadBehavior(){
+// adds state independent behavior to the lock by processing state independent input
+// returns 0 if the input was handled (succeess) and 1 if the input was not handled (exception)
+uint8_t addDefaultLockBehavior(){
     size_t pincodeLength = strlen(pincode);
     if (lockInput.pressEventType == KEY_NONE) {
     }
@@ -247,13 +248,14 @@ uint8_t addDefaultKeypadBehavior(){
         writePincodeToScreen(pincode);
     }
     else {
-        // Return 1 if the input was not handled (error)
+        // return 1 if the input was not handled (exception)
         return 1;
     }
-    // Return 0 if the input was handled (success)
+    // return 0 if the input was handled (success)
     return 0;
 }
 
+// runs the state initial, which determines if a pin code is currently set or not and changes state accordingly
 state_t runStateInitial(){
     logMessage("entered state initial", INFO);
     writeStateMessageToScreen("Welcome!");
@@ -266,13 +268,15 @@ state_t runStateInitial(){
     return STATE_SET_PIN_CODE_INITIAL;
 };
 
+// runs the state set pincode initial, which represents the inital setting of the pincode
+// when using the lock for the first time or after resetting the lock
 state_t runStateSetPincodeInitial(){
     if(currentState != previousState){
         logMessage("entered state set pincode initial", INFO);
         writeStateMessageToScreen("Set new Pincode:");
     }
     // if the input was handeled by default keypad behavior, return
-    if (addDefaultKeypadBehavior() == 0){
+    if (addDefaultLockBehavior() == 0){
         return currentState;
     }
     // if primary key is pressed, save the pincode in EEPROM
@@ -283,16 +287,17 @@ state_t runStateSetPincodeInitial(){
     return currentState;
 };
 
+// runs the state try pincode, which prompts the user to enter the currently set pincode to open the lock
 state_t runStateTryPincode(){
     if(currentState != previousState){
         logMessage("entered state try pincode ", INFO);
         writeStateMessageToScreen("Enter Pincode:");
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultKeypadBehavior() == 0){
+    if (addDefaultLockBehavior() == 0){
         return currentState;
     }
-    // state change to state set pincode
+    // state change to state set pincode, if the secondary key is pressed
     if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
         return STATE_SET_PIN_CODE_SUBSTATE_ENTER_CURRENT;
     }
@@ -308,7 +313,7 @@ state_t runStateTryPincode(){
     return currentState;
 };
 
-// substate of state set pincode, which request the user to enter the current pincode
+// substate of state set pincode, which request the user to enter the current pincode first to proceed
 state_t runStateSetPincodeSubstateEnterCurrent(){
     if(currentState != previousState){
         logMessage("entered state set pincode substate enter current", INFO);
@@ -317,7 +322,7 @@ state_t runStateSetPincodeSubstateEnterCurrent(){
         writeStateMessageToScreen("Enter current:");
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultKeypadBehavior() == 0){
+    if (addDefaultLockBehavior() == 0){
         return currentState;
     }
     if(lockInput.pressEventType == KEY_PRESS_START && lockInput.pressedKey == SECONDARY_KEY){
@@ -342,7 +347,7 @@ state_t runStateSetPincodeSubstateEnterNew(){
         writeStateMessageToScreen("Enter new Pin:");
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultKeypadBehavior() == 0){
+    if (addDefaultLockBehavior() == 0){
         return currentState;
     }
     // state change to state try pincode
@@ -357,6 +362,7 @@ state_t runStateSetPincodeSubstateEnterNew(){
     return currentState;
 }
 
+// runs the state open, which opens the lock
 state_t runStateOpen(){
     if(currentState != previousState){
         logMessage("entering state open", INFO);
@@ -373,7 +379,7 @@ state_t runStateOpen(){
     return currentState;
 }
 
-
+// runs the state reset, which prompts the user to enter the currently set pincode first
 state_t runStateReset(){
     if(currentState != previousState){
         logMessage("entering state reset", INFO);
@@ -382,7 +388,7 @@ state_t runStateReset(){
         writeStateMessageToScreen("Enter current:");
     }
     // if the input was handeled by default keypad behavior, return current state
-    if (addDefaultKeypadBehavior() == 0){
+    if (addDefaultLockBehavior() == 0){
         return currentState;
     }
     // cancel reset if secondary key is pressed
@@ -394,7 +400,7 @@ state_t runStateReset(){
         if(verifyPincode(pincode) != 0){
             strClear(pincode);
             writeStateMessageToScreen("Resetting...");
-            lockReset();
+            lockReset(); // if the given pincode was right, reset the lock
             return STATE_INITIAL;
         }
         strClear(pincode);
@@ -414,8 +420,8 @@ state_func_t* const stateTable[NUM_STATES] = {
     runStateReset
 };
 
-// checks if the user initiated a system reset
-// returns a non zero value if it is initiated and 0 if no reset is initiated
+// checks if the user has initiated a system reset
+// returns 1 if a reset was initiated and 0 if no reset was initiated
 uint8_t isSystemResetInitiated(){
     // system reset should not be available during setup and if the lock is already in state reset
     if(currentState != STATE_INITIAL && currentState != STATE_SET_PIN_CODE_INITIAL && currentState != STATE_RESET){
@@ -427,6 +433,7 @@ uint8_t isSystemResetInitiated(){
     return 0;
 }
 
+// runs the current state
 state_t runState() {
     if(isSystemResetInitiated() != 0){
         return STATE_RESET;
@@ -434,6 +441,7 @@ state_t runState() {
     return stateTable[currentState]();
 };
 
+// runs the lock by running the current state and determining the next state
 void lockRun(){
     const state_t previousStateLocal = currentState;
     currentState = runState();
