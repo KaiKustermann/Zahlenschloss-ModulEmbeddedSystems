@@ -4,7 +4,7 @@
 
 #include "timerHelpers.h"
 
-// compare match interrupt gets fired every millisecond 
+// compare match interrupt that gets fired every millisecond 
 ISR(TIMER1_COMPA_vect)
 {
     timerMillis++;

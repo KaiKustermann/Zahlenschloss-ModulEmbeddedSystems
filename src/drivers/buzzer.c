@@ -5,11 +5,11 @@
 #define SPEAKER_DDR DDRC
 #define SPEAKER_PIN PC0
 
-void init_speaker()
+// initializes the speaker
+void speakerInit()
 {
     SPEAKER_DDR |= (1 << SPEAKER_PIN);
 }
-
 
 void playToneLow()
 {

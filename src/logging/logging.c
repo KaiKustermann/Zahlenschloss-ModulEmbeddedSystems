@@ -7,7 +7,7 @@
 
 uint8_t loggingInitialized = 0;
 
-// initialized logging via usart
+// initializes logging via usart
 void loggingInit(){
     // initialize usart for logging, if it is not initialized already
     if(isUsartInitialized() == 0){

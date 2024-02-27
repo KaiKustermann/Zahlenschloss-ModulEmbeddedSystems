@@ -15,7 +15,7 @@
 #define PCIE_KEYPAD PCIE0
 #define PCMSK_KEYPAD PCMSK0
 #define PCINT_KEYPAD PCINT0_vect
-// mapping to pins of ports
+// mapping to pins of ports (e.g. ROW_0 is pin 4 on PORT_KEYPAD_ROWS)
 #define ROW_0 4
 #define ROW_1 5
 #define ROW_2 6
@@ -25,6 +25,7 @@
 #define COL_2 2
 #define COL_3 3
 
+// keypad layout
 uint8_t keypad[4][4] = {{'1','2','3','A'},
                         {'4','5','6','B'},
                         {'7','8','9','C'},
@@ -37,8 +38,7 @@ uint8_t currentPressedKey = 0;
 
 on_key_changed_function_t* keyPressHandler;
 
-// using column scanning technique (columns as input to the microcontroller); 
-// detailed: going through the rows (outputs to microcontroller) and applying ground (0) to each row. Then reading the columns (inputs to microcontroller). If the column is 0, the button in this row for this column was pressed.
+// initializes the keypad
 void keypadInit(){
     // set rows as output (set to 1) using the data direction registry
     DDR_KEYPAD_ROWS |= (1 << ROW_0) | (1 << ROW_1) | (1 << ROW_2) | (1 << ROW_3);
@@ -54,13 +54,20 @@ void keypadInit(){
     PCMSK_KEYPAD |= (1 << COL_0) | (1 << COL_1) | (1 << COL_2) | (1 << COL_3);
 }   
 
+/* 
+finds the pressed key using column scanning technique (columns as input to the microcontroller)
+detailed: going through the rows (outputs to microcontroller) and applying ground (0) to each row. 
+then reading the columns (inputs to microcontroller), which are pulled up (1) by default. 
+if a column is 0, the key in this row for this column was pressed, 
+because there flows a current from the row output pin to the column input pin.
+*/ 
 uint8_t findPressedKey(){
-    // disable pin change interrupt for pins
+    // disable pin change interrupt for column pins
     PCMSK_KEYPAD &= ~((1 << COL_0) | (1 << COL_1) | (1 << COL_2) | (1 << COL_3));
     const uint8_t rows[4] = {ROW_0, ROW_1, ROW_2, ROW_3};
     const uint8_t cols[4] = {COL_0, COL_1, COL_2, COL_3};
     for (uint8_t row=0; row<4; row++){
-        // set all row high (1)
+        // set all rows high (1)
         PORT_KEYPAD_ROWS  |= (1 << ROW_0) | (1 << ROW_1) | (1 << ROW_2) | (1 << ROW_3);
         // set current row to low (0)
         PORT_KEYPAD_ROWS &=~(1<<rows[row]);
@@ -87,11 +94,12 @@ uint8_t hasKeyChanged(){
     return keyChanged;
 }
 
+// sets the given function as handler for a key press
 void setKeyPressHandler(on_key_changed_function_t* keyPressHandlerFunction){
     keyPressHandler = keyPressHandlerFunction;
 }
 
-// function to send key event to handler
+// calls the key event handler function
 void sendKeyEvent(keyEventType eventType) {
     struct keyEvent keyPressEvent;
     keyPressEvent.pressEventType = eventType;
@@ -100,6 +108,7 @@ void sendKeyEvent(keyEventType eventType) {
     keyPressHandler(keyPressEvent);
 }
 
+// runs the keypad and calls the key event handler function in case of a key event
 void keypadRun(){
     // check if the key state has changed (flag has been set by interrupt)
     if (hasKeyChanged() != 0) {

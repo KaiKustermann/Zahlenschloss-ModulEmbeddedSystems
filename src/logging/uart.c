@@ -12,6 +12,7 @@
 
 static uint8_t uartInitialized = 0;
 
+/* initializes usart */
 void usartInit() {
     unsigned int ubrr = UBRR_VAL;
     /* set baud rate 
@@ -26,11 +27,12 @@ void usartInit() {
     uartInitialized = 1;
 }
 
+/* returns a non zero value if usart is initialized and 0 if it is not */
 uint8_t isUsartInitialized(){
     return uartInitialized;
 }
 
-/* send a char via usart */
+/* sends a char via usart */
 int usartPutChar(unsigned char c)
 {
     /* wait for empty transmit buffer
