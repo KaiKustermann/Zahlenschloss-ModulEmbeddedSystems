@@ -441,7 +441,7 @@ state_t runState() {
     return stateTable[currentState]();
 };
 
-// runs the lock by running the current state and determining the next state
+// runs the lock by running the current state and determining the next state to run
 void lockRun(){
     const state_t previousStateLocal = currentState;
     currentState = runState();
