@@ -21,7 +21,7 @@ Hardware needed:
  - 4x4 matrix pin pad
  - 16x2 LCD Display with IO expander
  - Mosfet module
- - 5v bolt pin lock
+ - 5V bolt pin lock
 
 Depending on how you want to design the safe, you may choose to use our CAD files to directly print oder edit the design to your liking. Alternatively a box made of wood can be crafted based on the original design.
 
@@ -39,7 +39,7 @@ Assembled safe with 3D printed chassis           |  Fusion360 Model
 :----------------------------------------:|:-------------------------:
 ![3d printed](./assets/safe.png)  | ![fusion model](./assets/fusion.png)
 
-The fusion file can be found in assets, also stl files for printing the safe directly without modifications. The model has necessary stands for screwing the lcd as well as the Arduino in place.
+The fusion file can be found in assets, also stl files for printing the safe directly without modifications. The model has necessary stands for screwing the LCD as well as the Arduino in place.
 
 ## 4. Software Setup
 
