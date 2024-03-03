@@ -31,7 +31,7 @@ Depending on how you want to design the safe, you may choose to use our CAD file
 
 ![Board schematic](./schematic/scematic_bb.png)
 
-### 3.2 Chassis and 3D Printing
+### 3.3 Chassis and 3D Printing
 
 Assembled safe with 3D printed chassis           |  Fusion360 Model
 :----------------------------------------:|:-------------------------:
