@@ -29,7 +29,7 @@ For the build and deployment process, the tool Make is used. Download Make for t
 For logging messages on the development machine, a USB serial connection from the ATmega328P to the development machine is used. On Windows, we recommend using PuTTY for opening a terminal to the serial port. On Linux the screen command can be used.
 - Windows:  
     - Download PuTTY from [the official website](https://putty.org/) and follow the installation process
-    - Configure the serial line as follows:
+    - Configure the serial line as follows:     
     ![PuTTY settings](./assets/putty.png)       
     - **Important:**    
     If you want to change the COM port to a port of your choice, make sure to also change the variable `PROGRAMMER_PORT` in the Makefile.
