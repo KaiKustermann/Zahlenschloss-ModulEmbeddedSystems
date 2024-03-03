@@ -186,5 +186,3 @@ When first turning on the safe, you will be prompted to set a new pin code.
 3. **Opening the lock**: When the right pin code was entered, the lock opens. When pressing B in this state, the safe will enter state 2.
 4. **Setting a new pin code**: This state asks for the set pin code first. If the given pin code is right, it will let you set a new pin code. When pressing B in this state, the safe will enter state 2.
 5. **Resetting to factory settings**: When holding the key # in any state for 4 seconds, the safe will enter the reset state. Here, you are prompted to enter the currently set pin code. If the correct pin code is entered, the lock will reset itself to factory settings.
-
-## 8. Credits and Sources
