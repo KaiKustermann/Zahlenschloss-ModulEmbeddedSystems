@@ -7,8 +7,6 @@
 
 ## 2. Project Description
 
-(TODO: Hier bild von safe einfügen)
-
 The project implements a safe using an ATmega328P as microcontroller, a 4x4 matrix keypad to capture user input and an LCD display as output to display important information about the state of the system. Two LEDs are used to indicate if the safe is open or closed. A DC locking bolt acts as mechanic mechanism for closing and opening the lock, which operates using a mosfet. Optionally a buzzer can be added to give auditory feedback to the user.
 The project is written in C using AVR-GCC as compiler without any additional libraries as external dependencies.
 
