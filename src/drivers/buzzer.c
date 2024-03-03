@@ -11,6 +11,8 @@ void speakerInit()
     SPEAKER_DDR |= (1 << SPEAKER_PIN);
 }
 
+// A function for each frequency is needed, since the builtin avr delay function expects a compile time constant.
+
 void playToneLow()
 {
     unsigned int duration = 1500;
