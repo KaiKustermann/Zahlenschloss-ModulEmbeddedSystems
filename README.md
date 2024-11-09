@@ -1,4 +1,3 @@
-This project was created in the module "Embedded Systems" in the Master "Computer Science and Media". For the project, the GitLab intance of our university was used, hence the GitLab users are shown in the commit history instead of this one.
 # Documentation Project Zahlenschloss
 
 ## 1. Contributors
